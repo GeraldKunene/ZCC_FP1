@@ -1,43 +1,73 @@
 // ========== HOME PAGE - MAIN APPLICATION ==========
+// Now pulls data from Google Sheets API
+
 // Global variables
 let members = [];
 let visits = [];
 
-// Load data from localStorage
-function loadData() {
-    console.log('Loading home page data...');
+// Load data from Google Sheets API
+async function loadData() {
+    console.log('Loading home page data from API...');
     
-    const storedMembers = localStorage.getItem('kganya_members');
-    if (storedMembers) {
-        members = JSON.parse(storedMembers);
-    } else {
-        members = [];
-        saveMembers();
+    try {
+        // Load members from API
+        const membersResult = await api.getMembers();
+        if (membersResult.success && membersResult.data) {
+            members = membersResult.data;
+            console.log('Members loaded from API:', members.length);
+        } else {
+            console.warn('Failed to load members:', membersResult.error);
+            members = [];
+        }
+        
+        // Load visits from API
+        const visitsResult = await api.getVisits();
+        if (visitsResult.success && visitsResult.data) {
+            visits = visitsResult.data;
+            console.log('Visits loaded from API:', visits.length);
+        } else {
+            console.warn('Failed to load visits:', visitsResult.error);
+            visits = [];
+        }
+        
+        updateStatistics();
+        
+    } catch (error) {
+        console.error('Error loading data:', error);
+        // Try to load from localStorage as fallback
+        const storedMembers = localStorage.getItem('kganya_members');
+        if (storedMembers) {
+            members = JSON.parse(storedMembers);
+        }
+        const storedVisits = localStorage.getItem('kganya_visits');
+        if (storedVisits) {
+            visits = JSON.parse(storedVisits);
+        }
+        updateStatistics();
     }
-
-    const storedVisits = localStorage.getItem('kganya_visits');
-    if (storedVisits) {
-        visits = JSON.parse(storedVisits);
-    } else {
-        visits = [];
-    }
-    
-    updateStatistics();
-}
-
-function saveMembers() {
-    localStorage.setItem('kganya_members', JSON.stringify(members));
 }
 
 // Update statistics on the home page
 function updateStatistics() {
     const totalMembers = members.length;
-    const activeMembers = members.filter(m => m.status === 'active').length;
+    
+    // Count active members (status === 'active' or no status)
+    const activeMembers = members.filter(m => m.status === 'active' || !m.status).length;
+    
+    // Count Kganya members
     const kganyaMembers = members.filter(m => m.kganya_member === 'Yes').length;
     
     // Get today's visits
     const today = new Date().toISOString().split('T')[0];
-    const todayVisits = visits.filter(v => v.date === today).length;
+    const todayVisits = visits.filter(v => {
+        const visitDate = v.visit_date || v.date;
+        // Handle full timestamp format
+        let dateToCompare = visitDate;
+        if (typeof visitDate === 'string' && visitDate.includes('T')) {
+            dateToCompare = visitDate.split('T')[0];
+        }
+        return dateToCompare === today;
+    }).length;
     
     // Animate the numbers
     animateNumber('totalMembers', totalMembers);
@@ -52,8 +82,8 @@ function animateNumber(elementId, targetValue) {
     if (!element) return;
     
     let currentValue = 0;
-    const duration = 2000; // 2 seconds
-    const stepTime = 20; // milliseconds
+    const duration = 2000;
+    const stepTime = 20;
     const steps = duration / stepTime;
     const increment = targetValue / steps;
     
@@ -122,26 +152,14 @@ function setupStatCards() {
 // Auto-refresh statistics every 30 seconds
 function startAutoRefresh() {
     setInterval(() => {
-        // Reload data and update statistics
-        const storedMembers = localStorage.getItem('kganya_members');
-        const storedVisits = localStorage.getItem('kganya_visits');
-        
-        if (storedMembers) {
-            members = JSON.parse(storedMembers);
-        }
-        if (storedVisits) {
-            visits = JSON.parse(storedVisits);
-        }
-        
-        updateStatistics();
-        console.log('Statistics auto-refreshed');
-    }, 30000); // Refresh every 30 seconds
+        loadData();
+    }, 30000);
 }
 
 // Initialize the application
-function init() {
+async function init() {
     console.log('Initializing Home Page...');
-    loadData();
+    await loadData();
     updateCurrentYear();
     setupParallax();
     setupFloatingCards();
