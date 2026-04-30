@@ -76,7 +76,7 @@
                     <li class="nav-item"><a class="nav-link" href="/pages/update.html"><i class="fas fa-edit"></i> Outcomes</a></li>
                     <li class="nav-item"><a class="nav-link" href="/pages/dashboard.html"><i class="fas fa-chart-line"></i> Dashboards</a></li>
                     <li class="nav-item"><a class="nav-link" href="/pages/events.html"><i class="fas fa-calendar-alt"></i> Events</a></li>  
-                    <li class="nav-item"><a class="nav-link" href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>                
+                    <li class="nav-item"><a class="nav-link" href="../login.html" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>               
                 </ul>
             </div>
         </div>
@@ -318,7 +318,7 @@
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script src="../js/api-client.js"></script>
     <script src="js/home-page.js"></script>
-    <script>
+<script>
     // Logout functionality
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
@@ -327,7 +327,7 @@
             localStorage.removeItem('zcc_auth');
             localStorage.removeItem('zcc_user');
             localStorage.removeItem('zcc_login_time');
-            window.location.href = '../login.html';
+            window.location.href = 'login.html';
         });
     }
 </script>

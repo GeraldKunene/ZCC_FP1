@@ -1,101 +1,84 @@
 // ========== HOME PAGE - MAIN APPLICATION ==========
-// Now pulls data from Google Sheets API
+// Optimized with caching
 
-// Global variables
 let members = [];
 let visits = [];
+let dataLoaded = false;
 
-// Load data from Google Sheets API
+// Load data with fast initial display
 async function loadData() {
-    console.log('Loading home page data from API...');
+    console.log('Loading home page data...');
     
+    // Try to load from API with cache
     try {
-        // Load members from API
+        // Show loading animation but don't block
+        showLoadingAnimation();
+        
+        // Load members (API will return cached data if available)
         const membersResult = await api.getMembers();
         if (membersResult.success && membersResult.data) {
             members = membersResult.data;
-            console.log('Members loaded from API:', members.length);
-        } else {
-            console.warn('Failed to load members:', membersResult.error);
-            members = [];
+            console.log('Members loaded:', members.length);
         }
         
-        // Load visits from API
+        // Load visits
         const visitsResult = await api.getVisits();
         if (visitsResult.success && visitsResult.data) {
             visits = visitsResult.data;
-            console.log('Visits loaded from API:', visits.length);
-        } else {
-            console.warn('Failed to load visits:', visitsResult.error);
-            visits = [];
+            console.log('Visits loaded:', visits.length);
         }
         
         updateStatistics();
+        hideLoadingAnimation();
+        dataLoaded = true;
         
     } catch (error) {
         console.error('Error loading data:', error);
-        // Try to load from localStorage as fallback
-        const storedMembers = localStorage.getItem('kganya_members');
-        if (storedMembers) {
-            members = JSON.parse(storedMembers);
-        }
-        const storedVisits = localStorage.getItem('kganya_visits');
-        if (storedVisits) {
-            visits = JSON.parse(storedVisits);
-        }
-        updateStatistics();
+        hideLoadingAnimation();
     }
 }
 
-// Update statistics on the home page
+// Quick update using numbers only (no heavy processing)
 function updateStatistics() {
     const totalMembers = members.length;
-    
-    // Count active members (status === 'active' or no status)
     const activeMembers = members.filter(m => m.status === 'active' || !m.status).length;
-    
-    // Count Kganya members
     const kganyaMembers = members.filter(m => m.kganya_member === 'Yes').length;
     
-    // Get today's visits
+    // Count today's visits efficiently
     const today = new Date().toISOString().split('T')[0];
-    const todayVisits = visits.filter(v => {
-        const visitDate = v.visit_date || v.date;
-        // Handle full timestamp format
-        let dateToCompare = visitDate;
-        if (typeof visitDate === 'string' && visitDate.includes('T')) {
-            dateToCompare = visitDate.split('T')[0];
+    let todayVisits = 0;
+    for (let i = 0; i < visits.length; i++) {
+        const visit = visits[i];
+        let visitDate = visit.visit_date || visit.date;
+        if (visitDate && visitDate.includes('T')) {
+            visitDate = visitDate.split('T')[0];
         }
-        return dateToCompare === today;
-    }).length;
+        if (visitDate === today) todayVisits++;
+    }
     
-    // Animate the numbers
-    animateNumber('totalMembers', totalMembers);
-    animateNumber('activeMembers', activeMembers);
-    animateNumber('todayVisits', todayVisits);
-    animateNumber('kganyaMembers', kganyaMembers);
+    // Update DOM
+    document.getElementById('totalMembers').textContent = totalMembers;
+    document.getElementById('activeMembers').textContent = activeMembers;
+    document.getElementById('todayVisits').textContent = todayVisits;
+    document.getElementById('kganyaMembers').textContent = kganyaMembers;
 }
 
-// Animate counting numbers
-function animateNumber(elementId, targetValue) {
-    const element = document.getElementById(elementId);
-    if (!element) return;
-    
-    let currentValue = 0;
-    const duration = 2000;
-    const stepTime = 20;
-    const steps = duration / stepTime;
-    const increment = targetValue / steps;
-    
-    const timer = setInterval(() => {
-        currentValue += increment;
-        if (currentValue >= targetValue) {
-            element.textContent = targetValue;
-            clearInterval(timer);
-        } else {
-            element.textContent = Math.floor(currentValue);
-        }
-    }, stepTime);
+// Loading animations
+let loadingTimeout;
+function showLoadingAnimation() {
+    const statNumbers = ['totalMembers', 'activeMembers', 'todayVisits', 'kganyaMembers'];
+    loadingTimeout = setTimeout(() => {
+        statNumbers.forEach(id => {
+            const el = document.getElementById(id);
+            if (el && el.textContent === '0') {
+                el.innerHTML = '<span class="spinner-border spinner-border-sm text-success"></span>';
+            }
+        });
+    }, 300); // Only show if loading takes more than 300ms
+}
+
+function hideLoadingAnimation() {
+    if (loadingTimeout) clearTimeout(loadingTimeout);
 }
 
 // Update footer year
@@ -106,18 +89,16 @@ function updateCurrentYear() {
     }
 }
 
-// Add parallax effect to hero section
+// Setup animations
 function setupParallax() {
     const hero = document.getElementById('homeHero');
     if (!hero) return;
-    
     window.addEventListener('scroll', () => {
         const scrolled = window.pageYOffset;
         hero.style.backgroundPositionY = scrolled * 0.5 + 'px';
     });
 }
 
-// Add floating animation to cards
 function setupFloatingCards() {
     const cards = document.querySelectorAll('.feature-card');
     cards.forEach((card, index) => {
@@ -125,18 +106,12 @@ function setupFloatingCards() {
     });
 }
 
-// Initialize AOS animations
 function initAOS() {
     if (typeof AOS !== 'undefined') {
-        AOS.init({
-            duration: 1000,
-            once: true,
-            offset: 100
-        });
+        AOS.init({ duration: 800, once: true, offset: 50 });
     }
 }
 
-// Add hover effect for stat cards
 function setupStatCards() {
     const statCards = document.querySelectorAll('.stat-card-flashing');
     statCards.forEach(card => {
@@ -149,14 +124,28 @@ function setupStatCards() {
     });
 }
 
-// Auto-refresh statistics every 30 seconds
+// Auto-refresh every 60 seconds
+let refreshInterval;
 function startAutoRefresh() {
-    setInterval(() => {
-        loadData();
-    }, 30000);
+    if (refreshInterval) clearInterval(refreshInterval);
+    refreshInterval = setInterval(() => {
+        if (!document.hidden) {
+            api.clearCache(); // Clear cache to force fresh data
+            loadData();
+        }
+    }, 60000);
 }
 
-// Initialize the application
+function handleVisibilityChange() {
+    if (document.hidden) {
+        if (refreshInterval) clearInterval(refreshInterval);
+    } else {
+        startAutoRefresh();
+        loadData();
+    }
+}
+
+// Initialize
 async function init() {
     console.log('Initializing Home Page...');
     await loadData();
@@ -166,10 +155,10 @@ async function init() {
     setupStatCards();
     initAOS();
     startAutoRefresh();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     console.log('Home Page initialization complete');
 }
 
-// Wait for DOM to be fully loaded
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {
