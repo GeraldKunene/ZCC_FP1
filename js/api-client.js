@@ -12,7 +12,7 @@ class ChurchAPI {
   async request(action, method = 'POST', data = {}, timeout = 15000) {
     // Check cache for GET requests (cache for 30 seconds)
     if (method === 'GET') {
-      const cacheKey = `${action}_${JSON.stringify(data)}`;
+      const cacheKey = `${action}_${JSON.stringify(data)}`;``
       const cached = this.cache.get(cacheKey);
       if (cached && (Date.now() - cached.timestamp) < 30000) {
         console.log(`📦 Using cached data for ${action}`);
