@@ -26,7 +26,7 @@ if (togglePasswordBtn) {
     });
 }
 
-// Handle form submission using the api object
+// Handle form submission
 if (loginForm) {
     loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -39,18 +39,15 @@ if (loginForm) {
             return;
         }
         
-        // Show loading state
         const originalBtnHTML = loginBtn.innerHTML;
         loginBtn.disabled = true;
         loginBtn.innerHTML = '<span class="spinner"></span> Authenticating...';
         
         try {
-            // Check if api is available
             let result;
             if (typeof api !== 'undefined' && api.authenticate) {
                 result = await api.authenticate(username, password);
             } else {
-                // Fallback to hardcoded admin credentials
                 result = { success: username === 'admin' && password === 'admin', data: { role: 'admin' } };
             }
             
@@ -59,15 +56,14 @@ if (loginForm) {
             if (result.success) {
                 showMessage(`Welcome ${username}! Redirecting...`, 'success');
                 
-                // Store login state
                 localStorage.setItem('zcc_auth', 'true');
                 localStorage.setItem('zcc_user', username);
                 localStorage.setItem('zcc_role', result.data?.role || 'admin');
                 localStorage.setItem('zcc_login_time', new Date().toISOString());
                 
-                // Redirect to home page (index.html)
+                // Redirect to HOME page
                 setTimeout(() => {
-                    window.location.href = 'index.html';
+                    window.location.href = 'home.html';
                 }, 1000);
             } else {
                 showMessage(result.error || 'Invalid username or password', 'error');
@@ -78,7 +74,6 @@ if (loginForm) {
             }
         } catch (error) {
             console.error('Login error:', error);
-            // Fallback to hardcoded admin credentials
             if (username === 'admin' && password === 'admin') {
                 showMessage('Welcome admin! Redirecting...', 'success');
                 localStorage.setItem('zcc_auth', 'true');
@@ -86,7 +81,7 @@ if (loginForm) {
                 localStorage.setItem('zcc_role', 'admin');
                 localStorage.setItem('zcc_login_time', new Date().toISOString());
                 setTimeout(() => {
-                    window.location.href = 'index.html';
+                    window.location.href = 'home.html';
                 }, 1000);
             } else {
                 showMessage('Invalid username or password', 'error');
@@ -110,10 +105,8 @@ function checkAuth() {
         const hoursDiff = (now - loginDate) / (1000 * 60 * 60);
         
         if (hoursDiff < 8) {
-            // Already logged in, redirect to home page (index.html)
-            window.location.href = 'index.html';
+            window.location.href = 'home.html';
         } else {
-            // Session expired
             localStorage.removeItem('zcc_auth');
             localStorage.removeItem('zcc_user');
             localStorage.removeItem('zcc_role');
@@ -132,5 +125,4 @@ document.querySelectorAll('.form-control-glass').forEach(input => {
     });
 });
 
-// Run auth check on page load
 checkAuth();
