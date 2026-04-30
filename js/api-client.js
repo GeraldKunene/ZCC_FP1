@@ -1,12 +1,19 @@
 // ========== GOOGLE SHEETS API CLIENT ==========
-const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbyw9KYnLjME_DAbeGfwlkw7erM7WwbzQt9F5tRPTkyctNWQEGdxvHx35cj_5xcebHFmgA/exec';
+const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbwlgWDUtjx43h2AcbMqAx2ad-QqBUtannK7Is0zo9czOJqbQoPB-0Gyqb1Fv0Y8OS4yAw/exec';
 
 
 class ChurchAPI {
   constructor(baseUrl) {
     this.baseUrl = baseUrl;
   }
+// Add to ChurchAPI class
+async authenticate(username, password) {
+    return this.request('authenticate', 'POST', { username, password });
+}
 
+async createUser(username, password, role) {
+    return this.request('createUser', 'POST', { username, password, role });
+}
   async request(action, method = 'POST', data = {}) {
     let url = this.baseUrl;
     
@@ -74,6 +81,10 @@ class ChurchAPI {
   async createVisit(visitData) {
     return this.request('createVisit', 'POST', visitData);
   }
+
+  async deleteOutcome(outcomeId) {
+    return this.request('deleteOutcome', 'POST', { outcome_id: outcomeId });
+}
 }
 
 

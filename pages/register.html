@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ZCC FP01 Church | Register & Manage Members</title>
+    <title>Luhlokohla ZCC | Register & Manage Members</title>
     
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -14,15 +14,54 @@
     <!-- Register Page CSS -->
     <link rel="stylesheet" href="../css/register-page.css">
 </head>
-<body>
 
+<body>
+<script>
+    // ========== AUTHENTICATION CHECK ==========
+    // Check if user is logged in before showing page content
+    
+    function checkAuthAndRedirect() {
+        const isLoggedIn = localStorage.getItem('zcc_auth');
+        
+        if (isLoggedIn !== 'true') {
+            // Redirect to login page
+            window.location.href = 'login.html';
+            return false;
+        }
+        
+        // Optional: Check session expiry (8 hours)
+        const loginTime = localStorage.getItem('zcc_login_time');
+        if (loginTime) {
+            const loginDate = new Date(loginTime);
+            const now = new Date();
+            const hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+            
+            if (hoursDiff > 8) {
+                // Session expired
+                localStorage.removeItem('zcc_auth');
+                localStorage.removeItem('zcc_user');
+                localStorage.removeItem('zcc_login_time');
+                window.location.href = 'login.html';
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    // Run auth check immediately
+    if (!checkAuthAndRedirect()) {
+        // Stop further script execution
+        throw new Error('Authentication required');
+    }
+</script>
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg fixed-top">
         <div class="container">
             <a class="navbar-brand" href="../index.html">
                 <div class="logo-wrapper">
                     <i class="fas fa-church"></i>
-                    <span class="brand-text">ZCC FP01 Church Statistics</span>
+                    <span class="brand-text">Luhlokohla ZCC</span>
                 </div>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
@@ -36,6 +75,7 @@
                     <li class="nav-item"><a class="nav-link" href="../pages/update.html"><i class="fas fa-edit"></i> Outcomes</a></li>
                     <li class="nav-item"><a class="nav-link" href="../pages/dashboard.html"><i class="fas fa-chart-line"></i> Dashboards</a></li> 
                     <li class="nav-item"><a class="nav-link" href="../pages/events.html"><i class="fas fa-calendar-alt"></i> Events</a></li>  
+                    <li class="nav-item"><a class="nav-link" href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>    
                 </ul>
             </div>
         </div>
@@ -152,6 +192,7 @@
                             <div class="col-md-6 form-group-modern">
                                 <label>Gender</label>
                                 <select id="gender" class="form-control-modern">
+                                    <option value="">Select Branch</option>
                                     <option value="Male">Male</option>
                                     <option value="Female">Female</option>
                                 </select>
@@ -257,18 +298,39 @@
                                 <label>Executive Committee</label>
                                 <select id="executive_committee" class="form-control-modern">
                                     <option value="">Select Committee</option>
-                                    <option value="church_council">Church Council</option>
-                                    <option value="finance_committee">Finance Committee</option>
+                                    <option value="church_council">Church Council(20 Men)</option>
+                                    <option value="lcdc">LCDC</option>
+                                    <option value="dptt">DPTT</option>
                                     <option value="youth_committee">Youth Committee</option>
                                     <option value="women_committee">Women's Committee</option>
-                                    <option value="men_committee">Men's Committee</option>
-                                    <option value="education_committee">Education Committee</option>
+                                    <option value="men_committee">Chamber of Commerce Committee</option>
+                                    <option value="sunday_school_committee">Sunday School Committee</option> 
+                                    <option value="Scholarship">Scholarship</option>
+                                    <option value="Minister">Minister</option>                                   
+                       
+
                                 </select>
                             </div>
-                            <div class="col-md-6 form-group-modern" id="executive_committee_role_group" style="display:none;">
-                                <label>Executive Committee Role</label>
-                                <input type="text" id="executive_committee_role" class="form-control-modern" placeholder="e.g., Chairperson, Secretary, Treasurer">
-                            </div>
+                                <div class="col-md-6 form-group-modern" id="executive_committee_role_group" style="display:none;">
+                                    <label>Executive Committee Role</label>
+                                    <select id="executive_committee_role" class="form-control-modern">
+                                            <option value="">Select Role</option>
+                                            <option value="Branch_head">Head</option>
+                                            <option value="Branch_vicehead">Vice Head</option>
+                                            <option value="Chairman">Chair</option>
+                                            <option value="Vice_chairman">Vice chair</option>
+                                            <option value="Secretary">Secretary</option>
+                                            <option value="Vice_secretary">Vice Secretary</option>
+                                            <option value="Additional_secretary">Additional Secretary</option>
+                                            <option value="Treasurer">Treasurer</option>
+                                            <option value="Vice_Treasurer">Vice Treasurer</option>
+                                            <option value="Key_man">Key men</option>
+                                            <option value="Vice_keyman">Vice Key men</option>
+                                            <option value="First_ten">First Ten</option>
+                                            <option value="Teacher">Teacher</option>
+                                            <option value="Other">Other</option>
+                                    </select>
+                                </div>
                         </div>
                     </div>
 
@@ -409,5 +471,18 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../js/api-client.js"></script>
     <script src="../js/register-page.js"></script>
+    <script>
+    // Logout functionality
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            localStorage.removeItem('zcc_auth');
+            localStorage.removeItem('zcc_user');
+            localStorage.removeItem('zcc_login_time');
+            window.location.href = '../login.html';
+        });
+    }
+</script>
 </body>
 </html>
