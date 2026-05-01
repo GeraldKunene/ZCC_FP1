@@ -2,7 +2,7 @@
 // This file has NO secret keys - only public information
 
 // The API URL is public - safe to share
-window.API_BASE_URL = 'https://script.google.com/macros/s/AKfycbysXY9LGCy7DyOTr9mqphrZ5S1Wu9V3JgUxr-Giqgqtb9Rpqjj1abkAPEiL3CHP0ht0EA/exec';
+window.API_BASE_URL = 'https://script.google.com/macros/s/AKfycbyQ5Lg7mu5EPHNDMO6Z8balEf0_iOlpeMVZ2R-3MF_j6ZvJm5lr2LY2_i8fwRqR-Y_pEA/exec';
 
 // No API key needed - we'll validate by domain in Apps Script
 window.API_KEY = '';
