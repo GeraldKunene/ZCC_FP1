@@ -31,6 +31,7 @@ async function loadData() {
 }
 
 // Render members table
+// Render members table - FIXED to handle non-string values
 function renderMembersTable(dataArray) {
     const tbody = document.getElementById("membersTableBody");
     if (!tbody) return;
@@ -46,16 +47,17 @@ function renderMembersTable(dataArray) {
     
     dataArray.forEach(m => {
         const row = tbody.insertRow();
-        row.insertCell(0).innerText = m.firstname || "";
-        row.insertCell(1).innerText = m.surname || "";
-        row.insertCell(2).innerText = m.pin || "";
-        row.insertCell(3).innerText = m.contact || "";
-        row.insertCell(4).innerText = m.branch || "N/A";
+        // Safely convert all values to strings
+        row.insertCell(0).innerText = (m.firstname || "").toString();
+        row.insertCell(1).innerText = (m.surname || "").toString();
+        row.insertCell(2).innerText = (m.pin !== undefined && m.pin !== null) ? m.pin.toString() : "";
+        row.insertCell(3).innerText = (m.contact || "").toString();
+        row.insertCell(4).innerText = (m.branch || "N/A").toString();
         
         // Status badge
         let statusClass = "status-active";
         let statusText = "Active";
-        const memberStatus = m.status || 'active';
+        const memberStatus = (m.status || 'active').toString();
         if (memberStatus === "backslided") { statusClass = "status-backslided"; statusText = "Backslided"; }
         else if (memberStatus === "deceased") { statusClass = "status-deceased"; statusText = "Deceased"; }
         else if (memberStatus === "transfer_out") { statusClass = "status-transfer"; statusText = "Transferred Out"; }
@@ -63,7 +65,9 @@ function renderMembersTable(dataArray) {
         else if (memberStatus === "converts") { statusClass = "status-active"; statusText = "Convert"; }
         
         row.insertCell(5).innerHTML = `<span class="status-badge ${statusClass}">${statusText}</span>`;
-        row.insertCell(6).innerHTML = `<span class="badge-kganya"><i class="fas ${m.kganya_member === 'Yes' ? 'fa-check-circle' : 'fa-times-circle'}"></i> ${m.kganya_member === 'Yes' ? 'Yes' : 'No'}</span>`;
+        
+        const kganyaValue = (m.kganya_member || 'No').toString();
+        row.insertCell(6).innerHTML = `<span class="badge-kganya"><i class="fas ${kganyaValue === 'Yes' ? 'fa-check-circle' : 'fa-times-circle'}"></i> ${kganyaValue === 'Yes' ? 'Yes' : 'No'}</span>`;
         
         const actionCell = row.insertCell(7);
         actionCell.className = "action-buttons";
@@ -106,7 +110,8 @@ function handleHistoryClick(e) {
     openHistoryModal(id);
 }
 
-// Search handling - FIXED to filter displayed list
+// Search handling - FIXED to properly search and render
+// Search handling - FIXED to handle non-string values
 function applySearchAndRender() {
     const searchInput = document.getElementById("globalSearchInput");
     if (!searchInput) return;
@@ -116,14 +121,22 @@ function applySearchAndRender() {
     if (searchTerm === "") {
         // Show all members
         renderMembersTable(members);
+        showMessage(`Showing all ${members.length} members`, "success");
     } else {
-        // Filter members based on search term
-        const filtered = members.filter(m => 
-            (m.firstname && m.firstname.toLowerCase().includes(searchTerm)) ||
-            (m.surname && m.surname.toLowerCase().includes(searchTerm)) ||
-            (m.pin && m.pin.toLowerCase().includes(searchTerm)) ||
-            (m.contact && m.contact.toLowerCase().includes(searchTerm))
-        );
+        // Filter members based on search term - FIXED: Convert all values to strings safely
+        const filtered = members.filter(m => {
+            // Safely convert each field to string before calling toLowerCase()
+            const firstName = (m.firstname || '').toString().toLowerCase();
+            const surname = (m.surname || '').toString().toLowerCase();
+            const pin = (m.pin !== undefined && m.pin !== null) ? m.pin.toString().toLowerCase() : '';
+            const contact = (m.contact || '').toString().toLowerCase();
+            
+            return firstName.includes(searchTerm) ||
+                   surname.includes(searchTerm) ||
+                   pin.includes(searchTerm) ||
+                   contact.includes(searchTerm);
+        });
+        
         renderMembersTable(filtered);
         
         if (filtered.length === 0) {
@@ -132,6 +145,16 @@ function applySearchAndRender() {
             showMessage(`Found ${filtered.length} member(s) matching "${searchTerm}"`, "success");
         }
     }
+}
+
+// Reset search function
+function resetSearch() {
+    const searchInput = document.getElementById("globalSearchInput");
+    if (searchInput) {
+        searchInput.value = "";
+    }
+    renderMembersTable(members);
+    showMessage('Search cleared. Showing all members.', 'success');
 }
 
 function showMessage(msg, type) {
@@ -332,7 +355,6 @@ if (statusForm) {
                 
                 // Reload data to reflect changes
                 await loadData();
-                applySearchAndRender();
             } else {
                 showMessage("Error saving outcome: " + (saveResult.error || "Unknown error"), "error");
             }
@@ -494,19 +516,10 @@ async function loadMemberOutcomes(memberId) {
     }
 }
 
-
 // Delete outcome record
 async function deleteOutcomeRecord(outcomeId, memberId) {
     if (confirm('⚠️ Are you sure you want to delete this outcome record?\n\nThis action cannot be undone!')) {
         try {
-            // Show deleting state on the button
-            const deleteBtn = document.querySelector(`.btn-delete-history[onclick*="${outcomeId}"]`);
-            if (deleteBtn) {
-                const originalText = deleteBtn.innerHTML;
-                deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
-                deleteBtn.disabled = true;
-            }
-            
             const result = await api.deleteOutcome(outcomeId);
             
             if (result.success) {
@@ -523,11 +536,6 @@ async function deleteOutcomeRecord(outcomeId, memberId) {
     }
 }
 
-// Add deleteOutcome function to your api-client.js if needed
-// async deleteOutcome(outcomeId) {
-//     return this.request('deleteOutcome', 'POST', { outcome_id: outcomeId });
-// }
-
 // Event Listeners
 function setupEventListeners() {
     const searchBtn = document.getElementById("searchBtn");
@@ -540,14 +548,20 @@ function setupEventListeners() {
     const convertFrom = document.getElementById("convertFrom");
     const searchInput = document.getElementById("globalSearchInput");
     
-    if (searchBtn) searchBtn.addEventListener("click", () => applySearchAndRender());
-    if (resetBtn) {
-        resetBtn.addEventListener("click", () => {
-            if (searchInput) searchInput.value = "";
-            renderMembersTable(members);
-            showMessage('Search cleared', 'success');
-        });
+    // FIXED: Search button handler
+    if (searchBtn) {
+        searchBtn.removeEventListener("click", applySearchAndRender);
+        searchBtn.addEventListener("click", applySearchAndRender);
+        console.log("Search button listener attached");
     }
+    
+    // FIXED: Reset button handler
+    if (resetBtn) {
+        resetBtn.removeEventListener("click", resetSearch);
+        resetBtn.addEventListener("click", resetSearch);
+        console.log("Reset button listener attached");
+    }
+    
     if (closeStatusBtn) closeStatusBtn.addEventListener("click", closeStatusModal);
     if (cancelStatusBtn) cancelStatusBtn.addEventListener("click", closeStatusModal);
     if (closeHistoryBtn) closeHistoryBtn.addEventListener("click", closeHistoryModal);
@@ -558,6 +572,7 @@ function setupEventListeners() {
     if (searchInput) {
         searchInput.addEventListener("keypress", function(e) {
             if (e.key === "Enter") {
+                e.preventDefault();
                 applySearchAndRender();
             }
         });
@@ -587,9 +602,15 @@ function updateCurrentYear() {
 
 // Initialize
 async function init() {
+    console.log("Initializing Update Page...");
     await loadData();
     updateCurrentYear();
     setupEventListeners();
+    console.log("Update Page Initialized");
 }
+
+// Make global functions available
+window.deleteOutcomeRecord = deleteOutcomeRecord;
+window.openHistoryModal = openHistoryModal;
 
 init();

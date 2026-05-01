@@ -8,12 +8,13 @@
 body {
     font-family: 'Inter', sans-serif;
     min-height: 100vh;
-    background: url('../images/background.png') no-repeat center center fixed;
+    /* CHANGED: Fixed path to background image in images folder */
+    background: url('../images/kganya.png') no-repeat center center fixed;
     background-size: cover;
     position: relative;
 }
 
-/* Dark overlay for better readability */
+/* Dark overlay for better readability - KEPT */
 body::before {
     content: '';
     position: fixed;
@@ -36,7 +37,7 @@ body::before {
     padding: 1.5rem;
 }
 
-/* Glassmorphism Card */
+/* Glassmorphism Card - ENHANCED */
 .glass-card {
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(12px);

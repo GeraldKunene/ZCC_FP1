@@ -6,176 +6,7 @@ let eventAttendances = [];
 let currentEventForCheckin = null;
 let eventToDelete = null;
 
-// Flag to track if we're using API or localStorage
-let useAPI = true;
-const API_BASE_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
-
-// ========== API FUNCTIONS ==========
-async function apiRequest(action, method = 'POST', data = {}) {
-    let url = API_BASE_URL;
-    
-    let options = {
-        method: method,
-        mode: 'cors', 
-        redirect: 'follow'
-    };
-
-    if (method === 'GET') {
-        const params = new URLSearchParams({ action, ...data });
-        url += `?${params.toString()}`;
-    } else {
-        options.headers = {
-            'Content-Type': 'text/plain;charset=utf-8' 
-        };
-        options.body = JSON.stringify({ action, ...data });
-    }
-
-    try {
-        const response = await fetch(url, options);
-        const result = await response.json();
-        return result;
-    } catch (error) {
-        console.error('API Error:', error);
-        return { success: false, error: error.toString() };
-    }
-}
-
-// Event API methods
-async function getEventsFromAPI() {
-    return apiRequest('getEvents', 'GET');
-}
-
-async function createEventInAPI(eventData) {
-    return apiRequest('createEvent', 'POST', eventData);
-}
-
-async function updateEventInAPI(eventId, eventData) {
-    return apiRequest('updateEvent', 'POST', { event_id: eventId, ...eventData });
-}
-
-async function deleteEventFromAPI(eventId) {
-    return apiRequest('deleteEvent', 'POST', { event_id: eventId });
-}
-
-async function getEventAttendancesFromAPI(eventId) {
-    return apiRequest('getEventAttendances', 'GET', { event_id: eventId });
-}
-
-async function createAttendanceInAPI(attendanceData) {
-    return apiRequest('createAttendance', 'POST', attendanceData);
-}
-
-async function deleteAttendanceFromAPI(attendanceId) {
-    return apiRequest('deleteAttendance', 'POST', { attendance_id: attendanceId });
-}
-
-async function getMembersFromAPI() {
-    return apiRequest('getMembers', 'GET');
-}
-
-// Load initial data from API
-async function loadData() {
-    console.log('Loading data from API...');
-    
-    // Load members from API
-    if (useAPI) {
-        try {
-            const membersResult = await getMembersFromAPI();
-            if (membersResult.success && membersResult.data) {
-                members = membersResult.data;
-                localStorage.setItem('zcc_members', JSON.stringify(members));
-                console.log('Members loaded from API:', members.length);
-            } else {
-                loadMembersFromLocal();
-            }
-        } catch (error) {
-            console.error('API error, loading members from localStorage:', error);
-            loadMembersFromLocal();
-        }
-    } else {
-        loadMembersFromLocal();
-    }
-    
-    // Load events from API
-    if (useAPI) {
-        try {
-            const eventsResult = await getEventsFromAPI();
-            if (eventsResult.success && eventsResult.data) {
-                events = eventsResult.data;
-                localStorage.setItem('zcc_events', JSON.stringify(events));
-                console.log('Events loaded from API:', events.length);
-            } else {
-                loadEventsFromLocal();
-            }
-        } catch (error) {
-            console.error('API error, loading events from localStorage:', error);
-            loadEventsFromLocal();
-        }
-    } else {
-        loadEventsFromLocal();
-    }
-    
-    // Load attendances from API
-    if (useAPI) {
-        try {
-            // For each event, load its attendances
-            const allAttendances = [];
-            for (const event of events) {
-                const attendanceResult = await getEventAttendancesFromAPI(event.event_id);
-                if (attendanceResult.success && attendanceResult.data) {
-                    allAttendances.push(...attendanceResult.data);
-                }
-            }
-            eventAttendances = allAttendances;
-            localStorage.setItem('zcc_event_attendances', JSON.stringify(eventAttendances));
-            console.log('Attendances loaded from API:', eventAttendances.length);
-        } catch (error) {
-            console.error('API error, loading attendances from localStorage:', error);
-            loadAttendancesFromLocal();
-        }
-    } else {
-        loadAttendancesFromLocal();
-    }
-}
-
-function loadMembersFromLocal() {
-    const storedMembers = localStorage.getItem("zcc_members");
-    if (storedMembers) {
-        members = JSON.parse(storedMembers);
-    } else {
-        members = [];
-        localStorage.setItem("zcc_members", JSON.stringify(members));
-    }
-}
-
-function loadEventsFromLocal() {
-    const storedEvents = localStorage.getItem("zcc_events");
-    if (storedEvents) {
-        events = JSON.parse(storedEvents);
-    } else {
-        events = [];
-        localStorage.setItem("zcc_events", JSON.stringify(events));
-    }
-}
-
-function loadAttendancesFromLocal() {
-    const storedAttendances = localStorage.getItem("zcc_event_attendances");
-    if (storedAttendances) {
-        eventAttendances = JSON.parse(storedAttendances);
-    } else {
-        eventAttendances = [];
-        localStorage.setItem("zcc_event_attendances", JSON.stringify(eventAttendances));
-    }
-}
-
-function saveEventsToLocal() {
-    localStorage.setItem("zcc_events", JSON.stringify(events));
-}
-
-function saveAttendancesToLocal() {
-    localStorage.setItem("zcc_event_attendances", JSON.stringify(eventAttendances));
-}
-
+// ========== HELPER FUNCTIONS ==========
 function generateId() {
     return Date.now().toString();
 }
@@ -240,6 +71,113 @@ function getEventTypeLabel(type) {
     return types[type] || type;
 }
 
+// ========== DATA LOADING FUNCTIONS using api-client.js ==========
+async function loadData() {
+    console.log('Loading data from API via ChurchAPI class...');
+    showMessage('Loading events data...', 'success');
+    
+    // Load members from API using the global api object
+    try {
+        const membersResult = await api.getMembers();
+        if (membersResult.success && membersResult.data) {
+            members = membersResult.data;
+            localStorage.setItem('zcc_members', JSON.stringify(members));
+            console.log('Members loaded from API:', members.length);
+        } else {
+            loadMembersFromLocal();
+        }
+    } catch (error) {
+        console.error('API error, loading members from localStorage:', error);
+        loadMembersFromLocal();
+    }
+    
+    // Load events from API using the global api object
+    try {
+        const eventsResult = await api.getEvents();
+        console.log('Events API response:', eventsResult);
+        if (eventsResult.success && eventsResult.data) {
+            // Ensure event_id is stored as string
+            events = eventsResult.data.map(event => ({
+                ...event,
+                event_id: String(event.event_id)
+            }));
+            localStorage.setItem('zcc_events', JSON.stringify(events));
+            console.log('Events loaded from API:', events.length);
+        } else {
+            loadEventsFromLocal();
+        }
+    } catch (error) {
+        console.error('API error, loading events from localStorage:', error);
+        loadEventsFromLocal();
+    }
+    
+    // Load attendances from API
+    if (events.length > 0) {
+        try {
+            const allAttendances = [];
+            for (const event of events) {
+                const attendanceResult = await api.getEventAttendances(event.event_id);
+                if (attendanceResult.success && attendanceResult.data) {
+                    allAttendances.push(...attendanceResult.data);
+                }
+            }
+            if (allAttendances.length > 0) {
+                eventAttendances = allAttendances;
+                localStorage.setItem('zcc_event_attendances', JSON.stringify(eventAttendances));
+                console.log('Attendances loaded from API:', eventAttendances.length);
+            } else {
+                loadAttendancesFromLocal();
+            }
+        } catch (error) {
+            console.error('API error, loading attendances from localStorage:', error);
+            loadAttendancesFromLocal();
+        }
+    } else {
+        loadAttendancesFromLocal();
+    }
+    
+    console.log('Data loading complete');
+}
+
+function loadMembersFromLocal() {
+    const storedMembers = localStorage.getItem("zcc_members");
+    if (storedMembers) {
+        members = JSON.parse(storedMembers);
+    } else {
+        members = [];
+        localStorage.setItem("zcc_members", JSON.stringify(members));
+    }
+}
+
+function loadEventsFromLocal() {
+    const storedEvents = localStorage.getItem("zcc_events");
+    if (storedEvents) {
+        events = JSON.parse(storedEvents);
+    } else {
+        events = [];
+        localStorage.setItem("zcc_events", JSON.stringify(events));
+    }
+}
+
+function loadAttendancesFromLocal() {
+    const storedAttendances = localStorage.getItem("zcc_event_attendances");
+    if (storedAttendances) {
+        eventAttendances = JSON.parse(storedAttendances);
+    } else {
+        eventAttendances = [];
+        localStorage.setItem("zcc_event_attendances", JSON.stringify(eventAttendances));
+    }
+}
+
+function saveEventsToLocal() {
+    localStorage.setItem("zcc_events", JSON.stringify(events));
+}
+
+function saveAttendancesToLocal() {
+    localStorage.setItem("zcc_event_attendances", JSON.stringify(eventAttendances));
+}
+
+// ========== RENDER FUNCTIONS ==========
 function renderEvents() {
     const eventsContainer = document.getElementById('eventsList');
     const eventCountBadge = document.getElementById('eventCountBadge');
@@ -262,13 +200,12 @@ function renderEvents() {
     let html = '';
     sortedEvents.forEach(event => {
         const attendanceCount = eventAttendances.filter(a => a.event_id === event.event_id).length;
-        const eventDate = new Date(event.event_date);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const isUpcoming = eventDate >= today;
+        
+        // IMPORTANT: Convert event_id to string explicitly
+        const eventIdStr = String(event.event_id);
         
         html += `
-            <div class="event-card" data-event-id="${event.event_id}">
+            <div class="event-card" data-event-id="${eventIdStr}">
                 <div class="event-card-header">
                     <span class="event-type-badge"><i class="fas fa-tag"></i> ${getEventTypeLabel(event.event_type)}</span>
                     <span style="font-size: 0.75rem;"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(event.event_venue)}</span>
@@ -282,8 +219,8 @@ function renderEvents() {
                 <div class="event-card-footer">
                     <div class="attendance-count"><i class="fas fa-users"></i> ${attendanceCount} checked in</div>
                     <div class="event-actions">
-                        <button class="btn-view-event" onclick="openEventDetails('${event.event_id}')" title="View & Check-in"><i class="fas fa-eye"></i></button>
-                        <button class="btn-delete-event" onclick="openDeleteEventModal('${event.event_id}')" title="Delete Event"><i class="fas fa-trash-alt"></i></button>
+                        <button class="btn-view-event" onclick="window.openEventDetails('${eventIdStr}')" title="View & Check-in"><i class="fas fa-eye"></i></button>
+                        <button class="btn-delete-event" onclick="window.openDeleteEventModal('${eventIdStr}')" title="Delete Event"><i class="fas fa-trash-alt"></i></button>
                     </div>
                 </div>
             </div>
@@ -294,16 +231,30 @@ function renderEvents() {
     if (eventCountBadge) eventCountBadge.innerText = `${events.length} event${events.length !== 1 ? 's' : ''}`;
 }
 
+function refreshEvents() {
+    console.log("Refreshing events...");
+    renderEvents();
+    showMessage('Events list refreshed', 'success');
+}
+
+// ========== MODAL FUNCTIONS ==========
 function openCreateEventModal() {
-    document.getElementById('eventModalTitle').innerHTML = '<i class="fas fa-calendar-plus"></i> Create New Event';
-    document.getElementById('editEventId').value = '';
-    document.getElementById('eventForm').reset();
-    document.getElementById('eventDate').value = new Date().toISOString().split('T')[0];
-    document.getElementById('eventModal').style.display = 'flex';
+    console.log("Opening create event modal...");
+    const modal = document.getElementById('eventModal');
+    if (modal) {
+        document.getElementById('eventModalTitle').innerHTML = '<i class="fas fa-calendar-plus"></i> Create New Event';
+        document.getElementById('editEventId').value = '';
+        document.getElementById('eventForm').reset();
+        document.getElementById('eventDate').value = new Date().toISOString().split('T')[0];
+        modal.style.display = 'flex';
+    } else {
+        console.error('Event modal element not found!');
+    }
 }
 
 function closeEventModal() {
-    document.getElementById('eventModal').style.display = 'none';
+    const modal = document.getElementById('eventModal');
+    if (modal) modal.style.display = 'none';
 }
 
 // Save event to API and localStorage
@@ -334,77 +285,90 @@ async function saveEvent(event) {
         created_at: new Date().toISOString()
     };
     
-    let apiSuccess = false;
-    
     if (eventId) {
         // Update existing event
-        if (useAPI) {
-            try {
-                const result = await updateEventInAPI(eventId, newEvent);
-                if (result.success) {
-                    apiSuccess = true;
-                    console.log('Event updated in API');
+        try {
+            const result = await api.updateEvent(eventId, newEvent);
+            if (result && result.success) {
+                const index = events.findIndex(e => e.event_id === eventId);
+                if (index !== -1) {
+                    events[index] = newEvent;
+                    saveEventsToLocal();
+                    showMessage('Event updated successfully and synced to Google Sheets!', 'success');
                 }
-            } catch (error) {
-                console.error('API update failed:', error);
-            }
-        }
-        
-        const index = events.findIndex(e => e.event_id === eventId);
-        if (index !== -1) {
-            events[index] = newEvent;
-            if (!apiSuccess) {
-                showMessage('Event updated successfully (saved locally only)', 'success');
             } else {
-                showMessage('Event updated successfully and synced to Google Sheets!', 'success');
+                const index = events.findIndex(e => e.event_id === eventId);
+                if (index !== -1) {
+                    events[index] = newEvent;
+                    saveEventsToLocal();
+                    showMessage('Event updated successfully (saved locally only)', 'success');
+                }
+            }
+        } catch (error) {
+            console.error('Update error:', error);
+            const index = events.findIndex(e => e.event_id === eventId);
+            if (index !== -1) {
+                events[index] = newEvent;
+                saveEventsToLocal();
+                showMessage('Event updated successfully (saved locally only)', 'success');
             }
         }
     } else {
         // Create new event
-        if (useAPI) {
-            try {
-                const result = await createEventInAPI(newEvent);
-                if (result.success) {
-                    apiSuccess = true;
-                    console.log('Event created in API');
-                }
-            } catch (error) {
-                console.error('API create failed:', error);
+        try {
+            const result = await api.createEvent(newEvent);
+            console.log('Create event result:', result);
+            if (result && result.success) {
+                events.push(newEvent);
+                saveEventsToLocal();
+                showMessage('Event created successfully and synced to Google Sheets!', 'success');
+            } else {
+                events.push(newEvent);
+                saveEventsToLocal();
+                showMessage('Event created successfully (saved locally only)', 'success');
             }
-        }
-        
-        events.push(newEvent);
-        if (!apiSuccess) {
+        } catch (error) {
+            console.error('Create error:', error);
+            events.push(newEvent);
+            saveEventsToLocal();
             showMessage('Event created successfully (saved locally only)', 'success');
-        } else {
-            showMessage('Event created successfully and synced to Google Sheets!', 'success');
         }
     }
     
-    saveEventsToLocal();
     renderEvents();
     closeEventModal();
 }
 
+// ========== EVENT DETAILS & CHECK-IN FUNCTIONS ==========
 async function openEventDetails(eventId) {
-    const event = events.find(e => e.event_id === eventId);
-    if (!event) return;
+    console.log('Opening event details for:', eventId);
+    console.log('Event ID type:', typeof eventId);
+    console.log('Available events:', events.map(e => ({ id: e.event_id, type: typeof e.event_id })));
+    
+    // Convert both to strings for comparison
+    const event = events.find(e => String(e.event_id) === String(eventId));
+    
+    if (!event) {
+        console.error('Event not found. Searched for:', eventId);
+        console.error('Available event IDs:', events.map(e => e.event_id));
+        showMessage('Event not found', 'error');
+        return;
+    }
     
     currentEventForCheckin = event;
+    console.log('Current event found:', event);
     
+    // Rest of your function remains the same...
     // Refresh attendances from API
-    if (useAPI) {
-        try {
-            const attendanceResult = await getEventAttendancesFromAPI(eventId);
-            if (attendanceResult.success && attendanceResult.data) {
-                // Update local attendances
-                const otherAttendances = eventAttendances.filter(a => a.event_id !== eventId);
-                eventAttendances = [...otherAttendances, ...attendanceResult.data];
-                saveAttendancesToLocal();
-            }
-        } catch (error) {
-            console.error('Failed to refresh attendances:', error);
+    try {
+        const attendanceResult = await api.getEventAttendances(eventId);
+        if (attendanceResult.success && attendanceResult.data) {
+            const otherAttendances = eventAttendances.filter(a => a.event_id !== eventId);
+            eventAttendances = [...otherAttendances, ...attendanceResult.data];
+            saveAttendancesToLocal();
         }
+    } catch (error) {
+        console.error('Failed to refresh attendances:', error);
     }
     
     const eventInfoHtml = `
@@ -416,19 +380,32 @@ async function openEventDetails(eventId) {
         ${event.event_description ? `<div class="event-info-row"><i class="fas fa-info-circle"></i> <strong>Description:</strong> ${escapeHtml(event.event_description)}</div>` : ''}
     `;
     
-    document.getElementById('eventInfo').innerHTML = eventInfoHtml;
-    document.getElementById('detailsEventTitle').innerHTML = `<i class="fas fa-calendar-alt"></i> ${escapeHtml(event.event_name)}`;
+    const eventInfoDiv = document.getElementById('eventInfo');
+    const detailsTitle = document.getElementById('detailsEventTitle');
+    const modal = document.getElementById('eventDetailsModal');
     
-    document.getElementById('memberSearchInput').value = '';
-    document.getElementById('memberSearchResults').style.display = 'none';
+    if (eventInfoDiv) eventInfoDiv.innerHTML = eventInfoHtml;
+    if (detailsTitle) detailsTitle.innerHTML = `<i class="fas fa-calendar-alt"></i> ${escapeHtml(event.event_name)}`;
     
-    renderCheckedInMembers(eventId);
+    const searchInput = document.getElementById('memberSearchInput');
+    if (searchInput) searchInput.value = '';
     
-    document.getElementById('eventDetailsModal').style.display = 'flex';
+    const resultsContainer = document.getElementById('memberSearchResults');
+    if (resultsContainer) resultsContainer.style.display = 'none';
+    
+    renderCheckedInMembers(event.event_id);
+    
+    if (modal) {
+        modal.style.display = 'flex';
+        console.log('Modal opened successfully');
+    } else {
+        console.error('Event details modal element not found!');
+    }
 }
 
 function closeEventDetailsModal() {
-    document.getElementById('eventDetailsModal').style.display = 'none';
+    const modal = document.getElementById('eventDetailsModal');
+    if (modal) modal.style.display = 'none';
     currentEventForCheckin = null;
 }
 
@@ -438,6 +415,8 @@ function renderCheckedInMembers(eventId) {
     const countSpan = document.getElementById('checkedInCount');
     
     if (countSpan) countSpan.innerText = attendances.length;
+    
+    if (!container) return;
     
     if (attendances.length === 0) {
         container.innerHTML = '<div class="empty-small">No members checked in yet</div>';
@@ -449,13 +428,18 @@ function renderCheckedInMembers(eventId) {
         const member = members.find(m => m.member_id === att.member_id);
         if (member) {
             const checkinTime = new Date(att.checkin_time).toLocaleTimeString();
+            const firstName = (member.firstname || '').toString();
+            const surname = (member.surname || '').toString();
+            
             html += `
-                <div class="checkedin-member-item">
+                <div class="checkedin-member-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e0e0e0;">
                     <div class="checkedin-member-info">
-                        <span class="checkedin-member-name">${escapeHtml(member.firstname)} ${escapeHtml(member.surname)}</span>
-                        <span class="checkedin-member-time"><i class="fas fa-clock"></i> Checked in at ${checkinTime}</span>
+                        <span class="checkedin-member-name" style="font-weight: 500;">${escapeHtml(firstName)} ${escapeHtml(surname)}</span>
+                        <span class="checkedin-member-time" style="font-size: 11px; color: #888; display: block;"><i class="fas fa-clock"></i> Checked in at ${checkinTime}</span>
                     </div>
-                    <button class="btn-remove-checkin" onclick="removeCheckin('${att.attendance_id}', '${eventId}')" title="Remove check-in"><i class="fas fa-times-circle"></i></button>
+                    <button class="btn-remove-checkin" onclick="window.removeCheckin('${att.attendance_id}', '${eventId}')" title="Remove check-in" style="background: none; border: none; color: #dc3545; cursor: pointer; font-size: 18px;">
+                        <i class="fas fa-times-circle"></i>
+                    </button>
                 </div>
             `;
         }
@@ -468,54 +452,112 @@ function searchMembersForCheckin() {
     const searchTerm = document.getElementById('memberSearchInput').value.toLowerCase().trim();
     const resultsContainer = document.getElementById('memberSearchResults');
     
+    console.log('Searching for:', searchTerm);
+    console.log('Current event:', currentEventForCheckin);
+    console.log('Members available:', members.length);
+    
     if (!searchTerm) {
-        resultsContainer.style.display = 'none';
+        if (resultsContainer) {
+            resultsContainer.style.display = 'none';
+            resultsContainer.innerHTML = '';
+        }
         return;
     }
     
-    const checkedInIds = eventAttendances.filter(a => a.event_id === currentEventForCheckin.event_id).map(a => a.member_id);
+    if (!currentEventForCheckin) {
+        console.error('No event selected for check-in');
+        showMessage('Please select an event first', 'error');
+        return;
+    }
     
-    const filtered = members.filter(m => 
-        !checkedInIds.includes(m.member_id) &&
-        ((m.firstname && m.firstname.toLowerCase().includes(searchTerm)) ||
-         (m.surname && m.surname.toLowerCase().includes(searchTerm)) ||
-         (m.pin && m.pin.toLowerCase().includes(searchTerm)) ||
-         (m.contact && m.contact.toLowerCase().includes(searchTerm)))
-    );
+    const checkedInIds = eventAttendances
+        .filter(a => a.event_id === currentEventForCheckin.event_id)
+        .map(a => a.member_id);
+    
+    console.log('Already checked in IDs:', checkedInIds);
+    
+    // FIXED: Safely convert all values to strings before calling toLowerCase()
+    const filtered = members.filter(m => {
+        // Skip if already checked in
+        if (checkedInIds.includes(m.member_id)) return false;
+        
+        // Safely convert each field to string
+        const firstName = (m.firstname || '').toString().toLowerCase();
+        const surname = (m.surname || '').toString().toLowerCase();
+        const pin = (m.pin !== undefined && m.pin !== null) ? m.pin.toString().toLowerCase() : '';
+        const contact = (m.contact !== undefined && m.contact !== null) ? m.contact.toString().toLowerCase() : '';
+        
+        return firstName.includes(searchTerm) ||
+               surname.includes(searchTerm) ||
+               pin.includes(searchTerm) ||
+               contact.includes(searchTerm);
+    });
+    
+    console.log('Filtered members:', filtered.length);
+    
+    if (!resultsContainer) {
+        console.error('Results container not found!');
+        return;
+    }
     
     if (filtered.length === 0) {
-        resultsContainer.innerHTML = '<div class="member-result-item">No members found</div>';
+        resultsContainer.innerHTML = '<div class="member-result-item" style="padding: 12px; text-align: center; color: #666;">No members found</div>';
         resultsContainer.style.display = 'block';
         return;
     }
     
     let html = '';
     filtered.forEach(member => {
+        // Safely display member info
+        const firstName = (member.firstname || '').toString();
+        const surname = (member.surname || '').toString();
+        const pin = (member.pin !== undefined && member.pin !== null) ? member.pin.toString() : 'N/A';
+        const contact = (member.contact !== undefined && member.contact !== null) ? member.contact.toString() : 'N/A';
+        const branch = (member.branch || 'N/A').toString();
+        
         html += `
-            <div class="member-result-item">
+            <div class="member-result-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #e0e0e0; background: white; border-radius: 8px; margin-bottom: 8px;">
                 <div class="member-result-info">
-                    <span class="member-result-name">${escapeHtml(member.firstname)} ${escapeHtml(member.surname)}</span>
-                    <span class="member-result-details">PIN: ${member.pin || 'N/A'} | Contact: ${member.contact || 'N/A'} | Branch: ${member.branch || 'N/A'}</span>
+                    <span class="member-result-name" style="font-weight: 600; display: block;">${escapeHtml(firstName)} ${escapeHtml(surname)}</span>
+                    <span class="member-result-details" style="font-size: 12px; color: #666;">PIN: ${escapeHtml(pin)} | Contact: ${escapeHtml(contact)} | Branch: ${escapeHtml(branch)}</span>
                 </div>
-                <button class="btn-checkin-member" onclick="checkinMember('${member.member_id}')"><i class="fas fa-check-circle"></i> Check In</button>
+                <button class="btn-checkin-member" onclick="window.checkinMember('${member.member_id}')" style="background: linear-gradient(135deg, #28a745, #218838); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+                    <i class="fas fa-check-circle"></i> Check In
+                </button>
             </div>
         `;
     });
     
     resultsContainer.innerHTML = html;
     resultsContainer.style.display = 'block';
+    resultsContainer.style.maxHeight = '300px';
+    resultsContainer.style.overflowY = 'auto';
+    resultsContainer.style.backgroundColor = '#f8f9fa';
+    resultsContainer.style.padding = '10px';
+    resultsContainer.style.borderRadius = '8px';
+    resultsContainer.style.marginTop = '10px';
+    resultsContainer.style.border = '1px solid #dee2e6';
 }
 
-// Check in a member to API and localStorage
 async function checkinMember(memberId) {
-    if (!currentEventForCheckin) return;
+    if (!currentEventForCheckin) {
+        showMessage('No event selected', 'error');
+        return;
+    }
     
     const member = members.find(m => m.member_id === memberId);
-    if (!member) return;
+    if (!member) {
+        showMessage('Member not found', 'error');
+        return;
+    }
+    
+    const firstName = (member.firstname || '').toString();
+    const surname = (member.surname || '').toString();
+    const memberName = `${firstName} ${surname}`;
     
     const alreadyCheckedIn = eventAttendances.some(a => a.event_id === currentEventForCheckin.event_id && a.member_id === memberId);
     if (alreadyCheckedIn) {
-        showMessage(`${member.firstname} ${member.surname} is already checked in!`, 'error');
+        showMessage(`${memberName} is already checked in!`, 'error');
         return;
     }
     
@@ -524,65 +566,66 @@ async function checkinMember(memberId) {
         event_id: currentEventForCheckin.event_id,
         member_id: memberId,
         checkin_time: new Date().toISOString(),
-        member_name: `${member.firstname} ${member.surname}`
+        member_name: memberName
     };
     
-    let apiSuccess = false;
-    
-    if (useAPI) {
-        try {
-            const result = await createAttendanceInAPI(attendance);
-            if (result.success) {
-                apiSuccess = true;
-                console.log('Attendance saved to API');
-            }
-        } catch (error) {
-            console.error('API save failed:', error);
+    try {
+        const result = await api.createAttendance(attendance);
+        if (result && result.success) {
+            eventAttendances.push(attendance);
+            saveAttendancesToLocal();
+            showMessage(`${memberName} checked in successfully and synced to Google Sheets!`, 'success');
+        } else {
+            eventAttendances.push(attendance);
+            saveAttendancesToLocal();
+            showMessage(`${memberName} checked in successfully (saved locally only)`, 'success');
         }
+    } catch (error) {
+        console.error('Check-in error:', error);
+        eventAttendances.push(attendance);
+        saveAttendancesToLocal();
+        showMessage(`${memberName} checked in successfully (saved locally only)`, 'success');
     }
     
-    eventAttendances.push(attendance);
-    saveAttendancesToLocal();
+    // Clear search
+    const searchInput = document.getElementById('memberSearchInput');
+    if (searchInput) searchInput.value = '';
     
-    if (apiSuccess) {
-        showMessage(`${member.firstname} ${member.surname} checked in successfully and synced to Google Sheets!`, 'success');
-    } else {
-        showMessage(`${member.firstname} ${member.surname} checked in successfully (saved locally only)`, 'success');
+    const resultsContainer = document.getElementById('memberSearchResults');
+    if (resultsContainer) {
+        resultsContainer.style.display = 'none';
+        resultsContainer.innerHTML = '';
     }
     
-    document.getElementById('memberSearchInput').value = '';
-    document.getElementById('memberSearchResults').style.display = 'none';
     renderCheckedInMembers(currentEventForCheckin.event_id);
 }
 
 // Remove check-in from API and localStorage
 async function removeCheckin(attendanceId, eventId) {
-    let apiSuccess = false;
-    
-    if (useAPI) {
-        try {
-            const result = await deleteAttendanceFromAPI(attendanceId);
-            if (result.success) {
-                apiSuccess = true;
-                console.log('Attendance removed from API');
+    try {
+        const result = await api.deleteAttendance(attendanceId);
+        const index = eventAttendances.findIndex(a => a.attendance_id === attendanceId);
+        if (index !== -1) {
+            eventAttendances.splice(index, 1);
+            saveAttendancesToLocal();
+            
+            if (result && result.success) {
+                showMessage('Check-in removed and synced to Google Sheets', 'success');
+            } else {
+                showMessage('Check-in removed (saved locally only)', 'success');
             }
-        } catch (error) {
-            console.error('API delete failed:', error);
+            
+            renderCheckedInMembers(eventId);
         }
-    }
-    
-    const index = eventAttendances.findIndex(a => a.attendance_id === attendanceId);
-    if (index !== -1) {
-        eventAttendances.splice(index, 1);
-        saveAttendancesToLocal();
-        
-        if (apiSuccess) {
-            showMessage('Check-in removed and synced to Google Sheets', 'success');
-        } else {
+    } catch (error) {
+        console.error('Remove check-in error:', error);
+        const index = eventAttendances.findIndex(a => a.attendance_id === attendanceId);
+        if (index !== -1) {
+            eventAttendances.splice(index, 1);
+            saveAttendancesToLocal();
             showMessage('Check-in removed (saved locally only)', 'success');
+            renderCheckedInMembers(eventId);
         }
-        
-        renderCheckedInMembers(eventId);
     }
 }
 
@@ -621,6 +664,7 @@ function exportAttendance() {
     showMessage('Attendance exported successfully!', 'success');
 }
 
+// ========== DELETE EVENT FUNCTIONS ==========
 function openDeleteEventModal(eventId) {
     const event = events.find(e => e.event_id === eventId);
     if (event) {
@@ -644,40 +688,46 @@ async function confirmDeleteEvent() {
     }
     
     if (eventToDelete) {
-        let apiSuccess = false;
-        
-        if (useAPI) {
-            try {
-                const result = await deleteEventFromAPI(eventToDelete.event_id);
-                if (result.success) {
-                    apiSuccess = true;
-                    console.log('Event deleted from API');
-                }
-            } catch (error) {
-                console.error('API delete failed:', error);
+        try {
+            const result = await api.deleteEvent(eventToDelete.event_id);
+            
+            const eventIndex = events.findIndex(e => e.event_id === eventToDelete.event_id);
+            if (eventIndex !== -1) events.splice(eventIndex, 1);
+            
+            eventAttendances = eventAttendances.filter(a => a.event_id !== eventToDelete.event_id);
+            
+            saveEventsToLocal();
+            saveAttendancesToLocal();
+            renderEvents();
+            
+            if (result && result.success) {
+                showMessage(`Event "${eventToDelete.event_name}" deleted successfully from Google Sheets!`, 'success');
+            } else {
+                showMessage(`Event "${eventToDelete.event_name}" deleted successfully (saved locally only)`, 'success');
             }
-        }
-        
-        const eventIndex = events.findIndex(e => e.event_id === eventToDelete.event_id);
-        if (eventIndex !== -1) events.splice(eventIndex, 1);
-        
-        eventAttendances = eventAttendances.filter(a => a.event_id !== eventToDelete.event_id);
-        
-        saveEventsToLocal();
-        saveAttendancesToLocal();
-        renderEvents();
-        
-        if (apiSuccess) {
-            showMessage(`Event "${eventToDelete.event_name}" deleted successfully from Google Sheets!`, 'success');
-        } else {
+            
+            closeDeleteEventModal();
+        } catch (error) {
+            console.error('Delete event error:', error);
+            const eventIndex = events.findIndex(e => e.event_id === eventToDelete.event_id);
+            if (eventIndex !== -1) events.splice(eventIndex, 1);
+            
+            eventAttendances = eventAttendances.filter(a => a.event_id !== eventToDelete.event_id);
+            
+            saveEventsToLocal();
+            saveAttendancesToLocal();
+            renderEvents();
+            
             showMessage(`Event "${eventToDelete.event_name}" deleted successfully (saved locally only)`, 'success');
+            closeDeleteEventModal();
         }
-        
-        closeDeleteEventModal();
     }
 }
 
+// ========== EVENT LISTENERS ==========
 function setupEventListeners() {
+    console.log('Setting up event listeners...');
+    
     const createEventBtn = document.getElementById('createEventBtn');
     const refreshEventsBtn = document.getElementById('refreshEventsBtn');
     const closeEventModalBtn = document.getElementById('closeEventModalBtn');
@@ -685,15 +735,46 @@ function setupEventListeners() {
     const eventForm = document.getElementById('eventForm');
     const closeDetailsModalBtn = document.getElementById('closeDetailsModalBtn');
     const closeDetailsFooterBtn = document.getElementById('closeDetailsFooterBtn');
-    const searchMemberBtn = document.getElementById('searchMemberBtn');
+ // In setupEventListeners, verify the search button
+const searchMemberBtn = document.getElementById('searchMemberBtn');
+if (searchMemberBtn) {
+    console.log('Search button found, attaching listener');
+    searchMemberBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('Search button clicked!');
+        searchMembersForCheckin();
+    });
+} else {
+    console.error('Search button NOT found!');
+}
     const memberSearchInput = document.getElementById('memberSearchInput');
     const exportAttendanceBtn = document.getElementById('exportEventAttendanceBtn');
     const closeDeleteEventModalBtn = document.getElementById('closeDeleteEventModalBtn');
     const cancelDeleteEventBtn = document.getElementById('cancelDeleteEventBtn');
     const confirmDeleteEventBtn = document.getElementById('confirmDeleteEventBtn');
     
-    if (createEventBtn) createEventBtn.addEventListener('click', openCreateEventModal);
-    if (refreshEventsBtn) refreshEventsBtn.addEventListener('click', () => renderEvents());
+    // Create Event button
+    if (createEventBtn) {
+        createEventBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Create Event button clicked!');
+            openCreateEventModal();
+        });
+        console.log('Create Event button listener attached');
+    } else {
+        console.error('Create Event button not found in DOM!');
+    }
+    
+    // Refresh button
+    if (refreshEventsBtn) {
+        refreshEventsBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Refresh button clicked!');
+            refreshEvents();
+        });
+        console.log('Refresh button listener attached');
+    }
+    
     if (closeEventModalBtn) closeEventModalBtn.addEventListener('click', closeEventModal);
     if (cancelEventBtn) cancelEventBtn.addEventListener('click', closeEventModal);
     if (eventForm) eventForm.addEventListener('submit', saveEvent);
@@ -714,7 +795,7 @@ function setupEventListeners() {
     }
     
     window.onclick = function(event) {
-        if (event.target.classList.contains('custom-modal')) {
+        if (event.target.classList && event.target.classList.contains('custom-modal')) {
             closeEventModal();
             closeEventDetailsModal();
             closeDeleteEventModal();
@@ -722,6 +803,7 @@ function setupEventListeners() {
     };
 }
 
+// ========== INITIALIZATION ==========
 async function init() {
     console.log('Initializing Events Page...');
     await loadData();
@@ -729,11 +811,20 @@ async function init() {
     updateCurrentYear();
     setupEventListeners();
     console.log('Initialization complete');
+    console.log('Events count:', events.length);
 }
 
+// Make functions global - THIS IS CRITICAL
 window.openEventDetails = openEventDetails;
 window.openDeleteEventModal = openDeleteEventModal;
 window.checkinMember = checkinMember;
 window.removeCheckin = removeCheckin;
+window.openCreateEventModal = openCreateEventModal;
+window.refreshEvents = refreshEvents;
 
-init();
+// Start the application when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
