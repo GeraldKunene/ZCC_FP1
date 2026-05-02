@@ -13,6 +13,78 @@ let kganyaSubscribersChart, kganyaGenderChart, kganyaVsNonChart, kganyaExecutive
 let employmentGenderChart, employmentCommitteeChart, educationLevelChart;
 let trainedGenderChart, trainedCommitteeChart;
 
+// ========== NEW: Calculate age from Date of Birth ==========
+function calculateAgeFromDOB(dateOfBirth) {
+    if (!dateOfBirth) return null;
+    
+    let birthDate;
+    
+    // Handle different date formats
+    if (typeof dateOfBirth === 'string') {
+        // Try parsing YYYY-MM-DD
+        if (dateOfBirth.includes('-')) {
+            birthDate = new Date(dateOfBirth);
+        }
+        // Try parsing DD/MM/YYYY
+        else if (dateOfBirth.includes('/')) {
+            let parts = dateOfBirth.split('/');
+            birthDate = new Date(parts[2], parts[1] - 1, parts[0]);
+        }
+        else {
+            birthDate = new Date(dateOfBirth);
+        }
+    } else if (dateOfBirth instanceof Date) {
+        birthDate = dateOfBirth;
+    } else {
+        return null;
+    }
+    
+    // Check if date is valid
+    if (isNaN(birthDate.getTime())) {
+        return null;
+    }
+    
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    
+    return age;
+}
+
+// ========== Age Group Function (commented out old version, using new approach) ==========
+// function getAgeGroup(age) {
+//     if (age === null) return 'Unknown';
+//     if (age <= 4) return '1-4'; if (age <= 9) return '5-9'; if (age <= 14) return '10-14';
+//     if (age <= 19) return '15-19'; if (age <= 24) return '20-24'; if (age <= 29) return '25-29';
+//     if (age <= 34) return '30-34'; if (age <= 39) return '35-39'; if (age <= 44) return '40-44';
+//     if (age <= 49) return '45-49'; return '50+';
+// }
+
+function getAgeGroup(age) {
+    if (age === null || age === undefined || isNaN(age)) return 'Unknown';
+    if (age <= 4) return '1-4';
+    if (age <= 9) return '5-9';
+    if (age <= 14) return '10-14';
+    if (age <= 19) return '15-19';
+    if (age <= 24) return '20-24';
+    if (age <= 29) return '25-29';
+    if (age <= 34) return '30-34';
+    if (age <= 39) return '35-39';
+    if (age <= 44) return '40-44';
+    if (age <= 49) return '45-49';
+    return '50+';
+}
+
+// Helper function to get age group directly from DOB
+function getAgeGroupFromDOB(dateOfBirth) {
+    const age = calculateAgeFromDOB(dateOfBirth);
+    return getAgeGroup(age);
+}
+
 // Helper function to calculate percentages
 function calculatePercentage(value, total) {
     if (total === 0) return '0%';
@@ -109,31 +181,8 @@ function updateCurrentYear() {
     if (yearElement) yearElement.textContent = new Date().getFullYear();
 }
 
-function getAgeGroup(age) {
-    if (age === null) return 'Unknown';
-    if (age <= 4) return '1-4'; if (age <= 9) return '5-9'; if (age <= 14) return '10-14';
-    if (age <= 19) return '15-19'; if (age <= 24) return '20-24'; if (age <= 29) return '25-29';
-    if (age <= 34) return '30-34'; if (age <= 39) return '35-39'; if (age <= 44) return '40-44';
-    if (age <= 49) return '45-49'; return '50+';
-}
-
-function calculateAgeFromPin(pin) {
-    if (!pin || pin.length < 6) return null;
-    try {
-        let year = parseInt(pin.substring(0, 2));
-        let month = parseInt(pin.substring(2, 4)) - 1;
-        let day = parseInt(pin.substring(4, 6));
-        let currentYear = new Date().getFullYear();
-        let century = year <= (currentYear % 100) ? 2000 : 1900;
-        let birthYear = century + year;
-        let birthDate = new Date(birthYear, month, day);
-        let today = new Date();
-        let age = today.getFullYear() - birthDate.getFullYear();
-        let m = today.getMonth() - birthDate.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
-        return age;
-    } catch(e) { return null; }
-}
+// ========== REMOVED: calculateAgeFromPin function (no longer needed) ==========
+// Age is now calculated from date_of_birth field
 
 async function loadData() {
     showMessage('Loading data from server...', 'success');
@@ -219,13 +268,14 @@ function updateTotalStatisticsAndCharts() {
     document.getElementById('committeeMembersCount').innerText = committeeCount;
     document.getElementById('totalVisitsOverall').innerText = visits.length;
     
-    // Member Distributions
+    // ========== UPDATED: Member Distributions using Date of Birth ==========
     const memberAgeGroups = { '1-4':0,'5-9':0,'10-14':0,'15-19':0,'20-24':0,'25-29':0,'30-34':0,'35-39':0,'40-44':0,'45-49':0,'50+':0,'Unknown':0 };
     const memberCommittees = { 'In Committee':0, 'Not in Committee':0 };
     const memberActivities = { 'Mokhukhu':0, 'Female Choir':0, 'Male Choir':0, 'Sunday School':0, 'Other':0 };
     
     filteredMembers.forEach(m => {
-        const age = calculateAgeFromPin(m.pin);
+        // Calculate age from date_of_birth instead of PIN
+        const age = calculateAgeFromDOB(m.date_of_birth);
         const ageGroup = getAgeGroup(age);
         if (memberAgeGroups[ageGroup] !== undefined) memberAgeGroups[ageGroup]++;
         else memberAgeGroups['Unknown']++;
@@ -273,7 +323,7 @@ function updateTotalStatisticsAndCharts() {
         options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } } }, plugins: { legend: { display: false }, dataLabels: { fontSize: 11 } } } 
     });
     
-    // Visit Distributions
+    // ========== UPDATED: Visit Distributions using Date of Birth ==========
     const memberMap = new Map();
     members.forEach(m => memberMap.set(m.member_id, m));
     const filteredVisits = getFilteredVisitsForCharts();
@@ -287,7 +337,8 @@ function updateTotalStatisticsAndCharts() {
         if (m) {
             if (m.gender === 'Male') visitGender['Male']++;
             if (m.gender === 'Female') visitGender['Female']++;
-            const age = calculateAgeFromPin(m.pin);
+            // Calculate age from date_of_birth instead of PIN
+            const age = calculateAgeFromDOB(m.date_of_birth);
             const ageGroup = getAgeGroup(age);
             if (visitAgeGroups[ageGroup] !== undefined) visitAgeGroups[ageGroup]++;
             else visitAgeGroups['Unknown']++;

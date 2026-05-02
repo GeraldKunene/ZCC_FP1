@@ -33,7 +33,7 @@ body {
     position: relative;
     font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, 'Roboto', sans-serif;
     line-height: 1.5;
-    padding-top: 76px;
+    padding-top: 56px;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -60,16 +60,74 @@ body::before {
     width: 100%;
 }
 
-/* ========== NAVBAR STYLES ========== */
+
+/* ========== NAVBAR STYLES WITH GLASS EFFECT ========== */
 .navbar {
-    background: linear-gradient(135deg, var(--primary-green), var(--primary-dark));
-    padding: 0.85rem 2rem;
+    background: linear-gradient(135deg, 
+        rgba(2, 82, 5, 0.85), 
+        rgba(1, 56, 3, 0.9));
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 0.4rem 2rem;
     box-shadow: var(--shadow-md);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1030;
+    width: 100%;
+}
+
+/* Gold bottom border line */
+.navbar::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 215, 0, 0.5), 
+        rgba(255, 215, 0, 0.9), 
+        rgba(255, 215, 0, 0.5), 
+        transparent);
+    pointer-events: none;
+}
+
+/* Glass shine effect */
+.navbar::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -60%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(115deg, 
+        transparent 30%, 
+        rgba(255, 255, 255, 0.08) 45%, 
+        rgba(255, 255, 255, 0.12) 50%, 
+        rgba(255, 255, 255, 0.08) 55%, 
+        transparent 70%);
+    transform: rotate(25deg);
+    pointer-events: none;
+    animation: glassShine 8s infinite;
+}
+
+/* Shine animation */
+@keyframes glassShine {
+    0% {
+        transform: translateX(-100%) rotate(25deg);
+    }
+    20%, 100% {
+        transform: translateX(100%) rotate(25deg);
+    }
 }
 
 .navbar-brand {
     display: flex;
     align-items: center;
+    text-decoration: none;
 }
 
 .logo-wrapper {
@@ -78,37 +136,125 @@ body::before {
     gap: 12px;
 }
 
-.logo-wrapper i {
-    font-size: 2rem;
-    color: var(--accent-gold);
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
-}
-
 .brand-text {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     font-weight: 700;
     color: white;
     letter-spacing: -0.5px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Navbar version of church icon (smaller for navbar) */
+.navbar .church-icon {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #025205, #013803);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border: 2px solid rgba(255, 193, 7, 0.6);
+    overflow: hidden;
+    transition: var(--transition);
+    margin: 0;
+}
+
+.navbar .church-icon:hover {
+    transform: scale(1.05);
+    border-color: var(--accent-gold);
+}
+
+.church-emblem {
+    width: 70%;
+    height: 70%;
+    object-fit: contain;
 }
 
 .nav-link {
     color: rgba(255, 255, 255, 0.9) !important;
     font-weight: 500;
     transition: var(--transition);
-    margin: 0 6px;
-    padding: 0.5rem 1rem !important;
+    margin: 0 4px;
+    padding: 0.3rem 0.8rem !important;
     border-radius: 30px;
+    font-size: 0.85rem;
 }
 
-.nav-link:hover, .nav-link.active {
+.nav-link:hover {
     color: white !important;
     background: rgba(255, 255, 255, 0.15);
     transform: translateY(-1px);
 }
 
+.nav-link.active {
+    color: white !important;
+    background: rgba(255, 255, 255, 0.2);
+    position: relative;
+}
+
+.nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 2px;
+    background: var(--accent-gold);
+    border-radius: 2px;
+}
+
 .nav-link i {
     margin-right: 8px;
 }
+
+/* Navbar Toggler */
+.navbar-toggler {
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: transparent;
+    padding: 0.4rem 0.6rem;
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.9)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* Logo Section (for pages that need it) */
+.logo-section {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.logo-section .church-icon {
+    width: 90px;
+    height: 90px;
+    background: linear-gradient(135deg, #025205, #013803);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.2rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 193, 7, 0.5);
+    overflow: hidden;
+}
+
+.logo-section h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 0.35rem;
+    letter-spacing: -0.5px;
+}
+
+.logo-section p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
+}
+
+
+/* ========== HERO SECTION - UPDATED TO MATCH DASHBOARD ========== */
 
 /* ========== HERO SECTION - PREMIUM GLASSY VERSION ========== */
 .hero-section {
@@ -118,19 +264,16 @@ body::before {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     color: white;
-    padding: 3.5rem 2rem;
+    padding: 2rem 2rem;
     text-align: center;
     margin-bottom: 2rem;
+    margin-top: 0;
     border-radius: 0 0 56px 56px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
     border-bottom: 1px solid rgba(255, 255, 255, 0.35);
-    border-left: none;
-    border-right: none;
     position: relative;
     overflow: hidden;
-    width: 100vw;
-    margin-left: calc(-50vw + 50%);
-    margin-right: calc(-50vw + 50%);
+    width: 100%;
 }
 
 /* Glass reflection effect */
@@ -165,9 +308,9 @@ body::before {
 }
 
 .hero-section h1 {
-    font-size: 2.6rem;
+    font-size: 2rem;
     font-weight: 800;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
     text-shadow: 0 4px 25px rgba(0, 0, 0, 0.35);
     letter-spacing: -0.5px;
     position: relative;
@@ -185,10 +328,11 @@ body::before {
     background-clip: unset;
     color: var(--accent-gold);
     text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    margin-right: 10px;
 }
 
 .hero-section p {
-    font-size: 1.2rem;
+    font-size: 1rem;
     opacity: 0.95;
     max-width: 650px;
     margin: 0 auto;
@@ -808,19 +952,20 @@ footer {
 /* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
     body {
-        padding-top: 60px;
-    }
-    
-    .hero-section h1 {
-        font-size: 1.8rem;
-    }
-    
-    .hero-section p {
-        font-size: 1rem;
+        padding-top: 52px;
     }
     
     .hero-section {
-        padding: 2rem 1rem;
+        padding: 1.5rem 1rem;
+        border-radius: 0 0 32px 32px;
+    }
+    
+    .hero-section h1 {
+        font-size: 1.5rem;
+    }
+    
+    .hero-section p {
+        font-size: 0.85rem;
     }
     
     .container {
@@ -860,7 +1005,7 @@ footer {
 
 @media (max-width: 576px) {
     .hero-section h1 {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
     }
     
     .events-section {

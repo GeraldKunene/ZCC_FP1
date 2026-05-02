@@ -1,4 +1,4 @@
-/* ========== REGISTER PAGE STYLES ========== */
+/* ========== REGISTER PAGE STYLES - EXPANDED VERSION ========== */
 :root {
     --primary-green: #025205;
     --primary-dark: #013803;
@@ -23,14 +23,16 @@
     box-sizing: border-box;
 }
 
-/* ========== BACKGROUND IMAGE ========== */
 body {
     background: url('../images/kganya.png') no-repeat center center fixed;
     background-size: cover;
     position: relative;
     font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, 'Roboto', sans-serif;
     line-height: 1.5;
-    padding-top: 76px;
+    padding-top: 56px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Dark overlay for better readability */
@@ -44,13 +46,175 @@ body::before {
     background: rgba(0, 0, 0, 0.6);
     z-index: -1;
 }
-/* Logo Section */
+
+
+
+/* ========== NAVBAR STYLES WITH GLASS EFFECT ========== */
+.navbar {
+    background: linear-gradient(135deg, 
+        rgba(2, 82, 5, 0.85), 
+        rgba(1, 56, 3, 0.9));
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 0.4rem 2rem;
+    box-shadow: var(--shadow-md);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1030;
+    width: 100%;
+}
+
+/* Gold bottom border line */
+.navbar::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 215, 0, 0.5), 
+        rgba(255, 215, 0, 0.9), 
+        rgba(255, 215, 0, 0.5), 
+        transparent);
+    pointer-events: none;
+}
+
+/* Glass shine effect */
+.navbar::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -60%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(115deg, 
+        transparent 30%, 
+        rgba(255, 255, 255, 0.08) 45%, 
+        rgba(255, 255, 255, 0.12) 50%, 
+        rgba(255, 255, 255, 0.08) 55%, 
+        transparent 70%);
+    transform: rotate(25deg);
+    pointer-events: none;
+    animation: glassShine 8s infinite;
+}
+
+/* Shine animation */
+@keyframes glassShine {
+    0% {
+        transform: translateX(-100%) rotate(25deg);
+    }
+    20%, 100% {
+        transform: translateX(100%) rotate(25deg);
+    }
+}
+
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.logo-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-text {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -0.5px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Navbar version of church icon (smaller for navbar) */
+.navbar .church-icon {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #025205, #013803);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border: 2px solid rgba(255, 193, 7, 0.6);
+    overflow: hidden;
+    transition: var(--transition);
+    margin: 0;
+}
+
+.navbar .church-icon:hover {
+    transform: scale(1.05);
+    border-color: var(--accent-gold);
+}
+
+.church-emblem {
+    width: 70%;
+    height: 70%;
+    object-fit: contain;
+}
+
+.nav-link {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-weight: 500;
+    transition: var(--transition);
+    margin: 0 4px;
+    padding: 0.3rem 0.8rem !important;
+    border-radius: 30px;
+    font-size: 0.85rem;
+}
+
+.nav-link:hover {
+    color: white !important;
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+}
+
+.nav-link.active {
+    color: white !important;
+    background: rgba(255, 255, 255, 0.2);
+    position: relative;
+}
+
+.nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 2px;
+    background: var(--accent-gold);
+    border-radius: 2px;
+}
+
+.nav-link i {
+    margin-right: 8px;
+}
+
+/* Navbar Toggler */
+.navbar-toggler {
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: transparent;
+    padding: 0.4rem 0.6rem;
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.9)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* Logo Section (for pages that need it) */
 .logo-section {
     text-align: center;
     margin-bottom: 2rem;
 }
 
-.church-icon {
+.logo-section .church-icon {
     width: 90px;
     height: 90px;
     background: linear-gradient(135deg, #025205, #013803);
@@ -62,12 +226,6 @@ body::before {
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
     border: 2px solid rgba(255, 193, 7, 0.5);
     overflow: hidden;
-}
-
-.church-emblem {
-    width: 70%;
-    height: 70%;
-    object-fit: contain;
 }
 
 .logo-section h1 {
@@ -83,57 +241,7 @@ body::before {
     font-size: 0.85rem;
 }
 
-/* ========== NAVBAR STYLES ========== */
-.navbar {
-    background: linear-gradient(135deg, var(--primary-green), var(--primary-dark));
-    padding: 0.85rem 2rem;
-    box-shadow: var(--shadow-md);
-}
-
-.navbar-brand {
-    display: flex;
-    align-items: center;
-}
-
-.logo-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.logo-wrapper i {
-    font-size: 2rem;
-    color: var(--accent-gold);
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
-}
-
-.brand-text {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: white;
-    letter-spacing: -0.5px;
-}
-
-.nav-link {
-    color: rgba(255, 255, 255, 0.9) !important;
-    font-weight: 500;
-    transition: var(--transition);
-    margin: 0 6px;
-    padding: 0.5rem 1rem !important;
-    border-radius: 30px;
-}
-
-.nav-link:hover, .nav-link.active {
-    color: white !important;
-    background: rgba(255, 255, 255, 0.15);
-    transform: translateY(-1px);
-}
-
-.nav-link i {
-    margin-right: 8px;
-}
-
-/* ========== HERO SECTION - PREMIUM GLASSY VERSION ========== */
+/* ========== HERO SECTION - UPDATED TO MATCH DASHBOARD ========== */
 .hero-section {
     background: linear-gradient(135deg, 
         rgba(2, 82, 5, 0.3), 
@@ -141,16 +249,16 @@ body::before {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     color: white;
-    padding: 3.5rem 2rem;
+    padding: 2rem 2rem;
     text-align: center;
     margin-bottom: 2rem;
+    margin-top: 0;
     border-radius: 0 0 56px 56px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
     border-bottom: 1px solid rgba(255, 255, 255, 0.35);
-    border-left: 1px solid rgba(255, 255, 255, 0.1);
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
     position: relative;
     overflow: hidden;
+    width: 100%;
 }
 
 /* Glass reflection effect */
@@ -185,9 +293,9 @@ body::before {
 }
 
 .hero-section h1 {
-    font-size: 2.6rem;
+    font-size: 2rem;
     font-weight: 800;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
     text-shadow: 0 4px 25px rgba(0, 0, 0, 0.35);
     letter-spacing: -0.5px;
     position: relative;
@@ -205,10 +313,11 @@ body::before {
     background-clip: unset;
     color: var(--accent-gold);
     text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    margin-right: 10px;
 }
 
 .hero-section p {
-    font-size: 1.2rem;
+    font-size: 1rem;
     opacity: 0.95;
     max-width: 650px;
     margin: 0 auto;
@@ -218,7 +327,8 @@ body::before {
     color: rgba(255, 255, 255, 0.95);
     font-weight: 400;
 }
-/* ========== SEARCH CARD - PREMIUM GLASSY VERSION ========== */
+
+/* ========== SEARCH CARD ========== */
 .search-card {
     max-width: 900px;
     margin: -1.5rem auto 1.8rem auto;
@@ -238,7 +348,7 @@ body::before {
     border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-/* ========== SEARCH HEADER - PREMIUM GLASSY VERSION ========== */
+/* ========== SEARCH HEADER ========== */
 .search-header {
     background: linear-gradient(135deg, 
         rgba(2, 82, 5, 0.75), 
@@ -308,18 +418,17 @@ body::before {
     }
 }
 
-/* Optional: Add subtle glow on hover */
 .search-header:hover::before {
     animation: glassShine 1.5s infinite;
 }
 
-/* ========== SEARCH BODY - PREMIUM GLASSY ========== */
+/* ========== SEARCH BODY ========== */
 .search-body {
     padding: 1.5rem;
     background: rgba(255, 255, 255, 0.05);
 }
 
-/* SEARCH INPUT GROUP - NEW FLEX LAYOUT */
+/* SEARCH INPUT GROUP */
 .search-input-group {
     display: flex;
     flex-wrap: wrap;
@@ -327,9 +436,9 @@ body::before {
     gap: 12px;
 }
 
-/* Search input - takes 70% of the space */
+/* Search input */
 .search-input {
-    flex: 7;  /* 70% width */
+    flex: 7;
     min-width: 200px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     padding: 12px 20px;
@@ -352,15 +461,14 @@ body::before {
     box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.2);
 }
 
-/* Buttons container - takes 30% of the space */
+/* Buttons container */
 .button-group {
-    flex: 3;  /* 30% width */
+    flex: 3;
     display: flex;
     gap: 10px;
     justify-content: flex-end;
 }
 
-/* Button styles - share the space equally */
 .btn-outline-success-custom,
 .btn-clear,
 .btn-register {
@@ -413,14 +521,7 @@ body::before {
     transform: translateY(-2px);
 }
 
-/* Remove the old button styles that might conflict */
-.search-input-group .btn-outline-success-custom,
-.search-input-group .btn-clear,
-.search-input-group .btn-register {
-    margin: 0;
-}
-
-/* Responsive: On smaller screens, stack vertically */
+/* Responsive */
 @media (max-width: 768px) {
     .search-input-group {
         flex-direction: column;
@@ -444,60 +545,7 @@ body::before {
     }
 }
 
-/* ========== TABLE STYLES ========== */
-.table-container {
-    background: white;
-    border-radius: 28px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-    padding: 1.5rem;
-    margin-bottom: 3rem;
-}
-
-.table thead th {
-    background: linear-gradient(135deg, var(--primary-green), var(--primary-dark));
-    color: white;
-    font-weight: 600;
-    border-bottom: none;
-    padding: 14px 12px;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.table tbody tr {
-    transition: var(--transition);
-}
-
-.table tbody tr:hover {
-    background-color: #f8fff4;
-    transform: scale(1.01);
-}
-
-.badge-kganya {
-    background-color: #e9ecef;
-    color: var(--primary-green);
-    font-weight: 600;
-    padding: 5px 12px;
-    border-radius: 30px;
-    font-size: 0.75rem;
-    display: inline-block;
-}
-
-.action-buttons .btn-sm {
-    border-radius: 20px;
-    margin: 2px 3px;
-    font-size: 0.7rem;
-    padding: 5px 12px;
-}
-
-.table td {
-    max-width: 150px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* ========== MODAL STYLES ========== */
+/* ========== EXPANDED MODAL STYLES - LARGER SIZE ========== */
 .custom-modal {
     display: none;
     position: fixed;
@@ -505,108 +553,81 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.55);
+    background-color: rgba(0, 0, 0, 0.7);
     z-index: 1060;
     justify-content: center;
     align-items: center;
-    backdrop-filter: blur(3px);
+    backdrop-filter: blur(5px);
+    overflow-y: auto;
+    padding: 20px;
 }
 
 .modal-card {
     background: #ffffff;
     width: 95%;
-    max-width: 560px;
+    max-width: 900px;
     border-radius: 32px;
-    box-shadow: 0 30px 40px rgba(0,0,0,0.2);
+    box-shadow: 0 30px 40px rgba(0,0,0,0.3);
     overflow: hidden;
     animation: fadeSlideUp 0.25s ease-out;
-}
-
-.modal-card-three-quarters {
-    max-width: 70vw !important;
-    width: 70% !important;
-    height: 70vh !important;
-    max-height: 70vh !important;
+    margin: auto;
     display: flex;
     flex-direction: column;
-    margin: 15vh auto !important;
+    max-height: 90vh;
+}
+
+/* For the three-quarters modal (register form) - INCREASED HEIGHT */
+.modal-card-three-quarters {
+    max-width: 85vw !important;
+    width: 85% !important;
+    height: 95vh !important;
+    max-height: 95vh !important;
+    display: flex;
+    flex-direction: column;
+    margin: 2.5vh auto !important;
     border-radius: 24px !important;
     overflow: hidden;
 }
 
 @media (min-width: 1400px) {
     .modal-card-three-quarters {
-        max-width: 65vw !important;
-        width: 65% !important;
-        height: 68vh !important;
-        max-height: 68vh !important;
-        margin: 16vh auto !important;
-    }
-}
-
-@media (max-width: 992px) {
-    .modal-card-three-quarters {
-        max-width: 80vw !important;
-        width: 80% !important;
-        height: 75vh !important;
-        max-height: 75vh !important;
-        margin: 12.5vh auto !important;
-    }
-}
-
-@media (max-width: 768px) {
-    .modal-card-three-quarters {
-        max-width: 90vw !important;
-        width: 90% !important;
-        height: 85vh !important;
-        max-height: 85vh !important;
-        margin: 7.5vh auto !important;
-        border-radius: 16px !important;
-    }
-}
-
-@media (max-width: 576px) {
-    .modal-card-three-quarters {
-        max-width: 95vw !important;
-        width: 95% !important;
+        max-width: 75vw !important;
+        width: 75% !important;
         height: 90vh !important;
         max-height: 90vh !important;
         margin: 5vh auto !important;
     }
 }
 
-.modal-card-three-quarters .modal-body-scrollable {
-    flex: 1;
-    overflow-y: auto;
-    padding: 1rem 1.5rem;
+@media (max-width: 992px) {
+    .modal-card-three-quarters {
+        max-width: 90vw !important;
+        width: 90% !important;
+        height: 92vh !important;
+        max-height: 92vh !important;
+        margin: 4vh auto !important;
+    }
 }
 
-.modal-card-three-quarters form {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+@media (max-width: 768px) {
+    .modal-card-three-quarters {
+        max-width: 95vw !important;
+        width: 95% !important;
+        height: 95vh !important;
+        max-height: 95vh !important;
+        margin: 2.5vh auto !important;
+        border-radius: 16px !important;
+    }
 }
 
-.modal-card-three-quarters .modal-header-custom {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-.modal-card-three-quarters .modal-footer-custom {
-    position: sticky;
-    bottom: 0;
-    background: #fefef7;
-    z-index: 10;
-}
-
-.modal-card-three-quarters .progress-steps {
-    position: sticky;
-    top: 70px;
-    background: #f8f9fa;
-    z-index: 9;
-    margin: 0;
-    padding: 0.8rem 1.5rem;
+@media (max-width: 576px) {
+    .modal-card-three-quarters {
+        max-width: 98vw !important;
+        width: 98% !important;
+        height: 96vh !important;
+        max-height: 96vh !important;
+        margin: 2vh auto !important;
+    }
 }
 
 @keyframes fadeSlideUp {
@@ -622,23 +643,32 @@ body::before {
 
 .modal-header-custom {
     background: linear-gradient(135deg, var(--primary-green), var(--primary-dark));
-    padding: 1rem 1.5rem;
+    padding: 1.25rem 1.8rem;
     color: white;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    flex-shrink: 0;
 }
 
 .modal-header-custom h5 {
     font-weight: 700;
     margin: 0;
-    font-size: 1.1rem;
+    font-size: 1.3rem;
+}
+
+.modal-header-custom h5 i {
+    font-size: 1.3rem;
+    margin-right: 10px;
 }
 
 .close-modal-btn {
     background: transparent;
     border: none;
-    font-size: 28px;
+    font-size: 32px;
     color: white;
     cursor: pointer;
     line-height: 1;
@@ -650,14 +680,30 @@ body::before {
 }
 
 .modal-body-custom {
-    padding: 1.5rem;
+    padding: 2rem;
     background: #fefef7;
+    max-height: calc(90vh - 140px);
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
-.modal-body-scrollable {
-    max-height: 70vh;
-    overflow-y: auto;
-    padding: 1rem 1.5rem;
+/* Make the form body scrollable - INCREASED HEIGHT */
+.modal-card-three-quarters .modal-body-scrollable,
+.modal-card .modal-body-scrollable {
+    flex: 1;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    padding: 1.5rem 2rem;
+    max-height: calc(95vh - 140px);
+}
+
+/* Ensure the form itself can scroll if needed */
+.modal-card-three-quarters form,
+.modal-card form {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
 }
 
 /* ========== PROGRESS STEPS INDICATOR ========== */
@@ -665,9 +711,13 @@ body::before {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 1.5rem;
+    padding: 1rem 2rem;
     background: #f8f9fa;
     border-bottom: 1px solid #e0e7e0;
+    position: sticky;
+    top: 0;
+    z-index: 15;
+    flex-shrink: 0;
 }
 
 .step {
@@ -696,8 +746,8 @@ body::before {
 }
 
 .step-number {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background: #dee2e6;
     color: #6c757d;
@@ -708,7 +758,7 @@ body::before {
     position: relative;
     z-index: 2;
     transition: var(--transition);
-    font-size: 0.9rem;
+    font-size: 1rem;
 }
 
 .step.active .step-number {
@@ -726,12 +776,12 @@ body::before {
     content: '\f00c';
     font-family: 'Font Awesome 6 Free';
     font-weight: 900;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
 }
 
 .step-label {
-    margin-top: 6px;
-    font-size: 0.7rem;
+    margin-top: 8px;
+    font-size: 0.8rem;
     font-weight: 600;
     color: #6c757d;
     text-align: center;
@@ -745,13 +795,14 @@ body::before {
     color: var(--primary-green);
 }
 
-/* ========== FORM SECTIONS ========== */
+/* ========== FORM SECTIONS - ENLARGED ========== */
 .form-section {
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
     border: 1px solid #e0e7e0;
-    border-radius: 12px;
-    padding: 1rem;
+    border-radius: 16px;
+    padding: 1.5rem;
     background: #fafdfa;
+    break-inside: avoid;
 }
 
 .step-section {
@@ -770,41 +821,42 @@ body::before {
 }
 
 .section-title {
-    font-size: 1rem;
+    font-size: 1.2rem;
     font-weight: 700;
     color: var(--primary-green);
-    margin-bottom: 1rem;
-    padding-bottom: 0.4rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.6rem;
     border-bottom: 2px solid var(--primary-green);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
 .section-title i {
-    font-size: 1rem;
+    font-size: 1.2rem;
 }
 
+/* ========== FORM GROUPS - ENLARGED LABELS AND INPUTS ========== */
 .form-group-modern {
-    margin-bottom: 0.8rem;
+    margin-bottom: 1.2rem;
 }
 
 .form-group-modern label {
     font-weight: 600;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.6rem;
     color: var(--primary-dark);
     display: block;
-    font-size: 0.85rem;
+    font-size: 0.95rem;
 }
 
 .form-control-modern {
     width: 100%;
-    padding: 8px 12px;
+    padding: 10px 14px;
     border: 1.5px solid #e0e7e0;
     border-radius: 10px;
     transition: var(--transition);
     background-color: white;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
 }
 
 .form-control-modern:focus {
@@ -813,33 +865,47 @@ body::before {
     box-shadow: 0 0 0 3px rgba(2, 82, 5, 0.1);
 }
 
+/* Larger textareas */
+textarea.form-control-modern {
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* Checkbox styling */
 .form-group-modern input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    margin-right: 8px;
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
     cursor: pointer;
     accent-color: var(--primary-green);
 }
 
-/* ========== REVIEW SECTION ========== */
+/* Select dropdowns */
+select.form-control-modern {
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+/* ========== REVIEW SECTION - ENLARGED ========== */
 .review-section {
-    margin-top: 1rem;
+    margin-top: 1.5rem;
     border-top: 2px solid var(--primary-green);
-    padding-top: 1rem;
+    padding-top: 1.5rem;
 }
 
 .review-content {
-    max-height: 400px;
+    max-height: 500px;
     overflow-y: auto;
+    padding-right: 10px;
 }
 
 .review-section-title {
     font-weight: 700;
     color: var(--primary-green);
-    margin: 12px 0 8px 0;
-    padding-bottom: 4px;
+    margin: 16px 0 12px 0;
+    padding-bottom: 6px;
     border-bottom: 1px solid #dee2e6;
-    font-size: 0.9rem;
+    font-size: 1rem;
 }
 
 .review-section-title:first-child {
@@ -847,47 +913,58 @@ body::before {
 }
 
 .review-item {
-    padding: 8px;
-    margin-bottom: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
     background: white;
     border-radius: 8px;
     border-left: 3px solid var(--primary-green);
-    font-size: 0.85rem;
+    font-size: 0.9rem;
 }
 
 .review-item strong {
     color: var(--primary-dark);
     display: inline-block;
-    width: 160px;
-    font-size: 0.85rem;
+    width: 180px;
+    font-size: 0.9rem;
 }
 
-/* ========== NAVIGATION BUTTONS ========== */
+/* ========== NAVIGATION BUTTONS - ENLARGED ========== */
 .modal-footer-custom {
-    padding: 0.8rem 1.5rem 1.2rem;
+    padding: 1.2rem 2rem;
     background: #fefef7;
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
+    gap: 15px;
+    border-top: 1px solid #e0e7e0;
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    flex-shrink: 0;
 }
 
 .navigation-buttons {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
-    padding: 0.8rem 1.5rem 1.2rem;
+    gap: 15px;
+    padding: 1rem 2rem 1.5rem;
+    background: #fefef7;
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    flex-shrink: 0;
+    border-top: 1px solid #e0e7e0;
 }
 
 .btn-save {
     background: linear-gradient(135deg, var(--primary-green), var(--primary-dark));
     border: none;
     border-radius: 40px;
-    padding: 8px 24px;
+    padding: 10px 28px;
     font-weight: 600;
     color: white;
     transition: var(--transition);
-    font-size: 0.9rem;
+    font-size: 1rem;
 }
 
 .btn-save:hover {
@@ -899,11 +976,11 @@ body::before {
     background-color: #6c757d;
     border: none;
     border-radius: 40px;
-    padding: 8px 24px;
+    padding: 10px 28px;
     font-weight: 600;
     color: white;
     transition: var(--transition);
-    font-size: 0.9rem;
+    font-size: 1rem;
 }
 
 .btn-secondary-modal:hover {
@@ -915,11 +992,11 @@ body::before {
     background: linear-gradient(135deg, var(--primary-green), var(--primary-dark));
     border: none;
     border-radius: 40px;
-    padding: 8px 24px;
+    padding: 10px 28px;
     font-weight: 600;
     color: white;
     transition: var(--transition);
-    font-size: 0.9rem;
+    font-size: 1rem;
 }
 
 .btn-primary-modal:hover {
@@ -927,7 +1004,95 @@ body::before {
     box-shadow: var(--shadow-sm);
 }
 
-/* ========== DELETE MODAL SPECIFIC ========== */
+/* ========== TABLE STYLES ========== */
+.table-container {
+    background: white;
+    border-radius: 28px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+    padding: 1.5rem;
+    margin-bottom: 3rem;
+    overflow-x: auto;
+}
+
+.table-responsive-scroll {
+    max-height: 550px;
+    overflow-y: auto;
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+}
+
+.table-responsive-scroll::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.table-responsive-scroll::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.table-responsive-scroll::-webkit-scrollbar-thumb {
+    background: var(--primary-green);
+    border-radius: 4px;
+}
+
+.table-responsive-scroll thead th {
+    position: sticky;
+    top: 0;
+    background: linear-gradient(135deg, var(--primary-green), var(--primary-dark));
+    color: white;
+    z-index: 10;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.table thead th {
+    background: linear-gradient(135deg, var(--primary-green), var(--primary-dark));
+    color: white;
+    font-weight: 600;
+    border-bottom: none;
+    padding: 14px 12px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.table tbody tr {
+    transition: var(--transition);
+}
+
+.table tbody tr:hover {
+    background-color: #f8fff4;
+}
+
+.table td {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 12px 8px;
+    vertical-align: middle;
+}
+
+.badge-kganya {
+    background-color: #e9ecef;
+    color: var(--primary-green);
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 30px;
+    font-size: 0.75rem;
+    display: inline-block;
+}
+
+.action-buttons .btn-sm {
+    border-radius: 20px;
+    margin: 2px 3px;
+    font-size: 0.7rem;
+    padding: 5px 12px;
+}
+
+/* ========== DELETE MODAL ========== */
 .member-details-card {
     background: #f8f9fa;
     border-radius: 12px;
@@ -971,6 +1136,16 @@ body::before {
     border-left: 5px solid #dc3545;
 }
 
+.error-message {
+    background-color: #f8d7da;
+    color: #a71d2a;
+    border-radius: 10px;
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+    border-left: 4px solid #dc3545;
+}
+
 /* ========== FOOTER ========== */
 footer {
     background: var(--primary-dark);
@@ -993,6 +1168,49 @@ footer {
     margin-right: 6px;
 }
 
+/* ========== BRANCH FIELD STYLES ========== */
+#branch_level:disabled + label,
+#branch:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.form-group-modern select:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+}
+
+#branch {
+    transition: all 0.3s ease;
+}
+
+/* ========== CUSTOM SCROLLBAR FOR SCROLLABLE AREAS ========== */
+.modal-body-scrollable::-webkit-scrollbar,
+.modal-body-custom::-webkit-scrollbar,
+.review-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-body-scrollable::-webkit-scrollbar-track,
+.modal-body-custom::-webkit-scrollbar-track,
+.review-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.modal-body-scrollable::-webkit-scrollbar-thumb,
+.modal-body-custom::-webkit-scrollbar-thumb,
+.review-content::-webkit-scrollbar-thumb {
+    background: var(--primary-green);
+    border-radius: 4px;
+}
+
+.modal-body-scrollable::-webkit-scrollbar-thumb:hover,
+.modal-body-custom::-webkit-scrollbar-thumb:hover,
+.review-content::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-dark);
+}
+
 /* ========== RESPONSIVE DESIGN ========== */
 @media (max-width: 768px) {
     body {
@@ -1009,7 +1227,6 @@ footer {
     
     .search-card {
         margin: -1.2rem 1rem 1.5rem 1rem;
-        border-radius: 40px;
     }
     
     .search-header {
@@ -1018,17 +1235,6 @@ footer {
     
     .search-body {
         padding: 1rem;
-    }
-    
-    .search-input-group {
-        flex-direction: column;
-    }
-    
-    .search-input-group button,
-    .search-input-group .btn-outline-success-custom,
-    .search-input-group .btn-clear,
-    .search-input-group .btn-register {
-        width: 100%;
     }
     
     .table-container {
@@ -1042,7 +1248,7 @@ footer {
     }
     
     .progress-steps {
-        padding: 0.8rem;
+        padding: 0.8rem 1rem;
     }
     
     .step-label {
@@ -1054,11 +1260,11 @@ footer {
     }
     
     .form-section {
-        padding: 0.8rem;
+        padding: 1rem;
     }
     
     .section-title {
-        font-size: 0.9rem;
+        font-size: 1rem;
     }
     
     .review-item strong {
@@ -1069,6 +1275,7 @@ footer {
     
     .navigation-buttons {
         flex-wrap: wrap;
+        padding: 1rem;
     }
     
     .navigation-buttons button {
@@ -1088,6 +1295,33 @@ footer {
     .footer-content {
         flex-direction: column;
         text-align: center;
+    }
+    
+    .modal-header-custom h5 {
+        font-size: 1.1rem;
+    }
+    
+    .modal-body-custom {
+        padding: 1rem;
+    }
+    
+    .form-group-modern label {
+        font-size: 0.85rem;
+    }
+    
+    .form-control-modern {
+        font-size: 0.85rem;
+        padding: 8px 12px;
+    }
+    
+    .modal-card-three-quarters .modal-body-scrollable,
+    .modal-card .modal-body-scrollable {
+        padding: 1rem;
+        max-height: calc(95vh - 120px);
+    }
+    
+    .modal-body-custom {
+        max-height: calc(90vh - 120px);
     }
 }
 
@@ -1110,4 +1344,30 @@ footer {
         font-size: 0.65rem;
         padding: 3px 8px;
     }
+    
+    .modal-card-three-quarters .modal-body-scrollable,
+    .modal-card .modal-body-scrollable {
+        padding: 0.8rem;
+        max-height: calc(96vh - 100px);
+    }
+    
+    .form-section {
+        padding: 0.8rem;
+    }
+}
+
+/* Ensure the form doesn't overflow horizontally */
+.modal-card-three-quarters form,
+.modal-card form {
+    overflow-x: hidden;
+}
+
+/* Make sure all form controls fit within the modal */
+.form-group-modern {
+    overflow-x: hidden;
+}
+
+.form-control-modern {
+    max-width: 100%;
+    box-sizing: border-box;
 }

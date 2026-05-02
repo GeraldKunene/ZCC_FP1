@@ -21,8 +21,10 @@
         <div class="container">
             <a class="navbar-brand" href="../index.html">
                 <div class="logo-wrapper">
-                    <i class="fas fa-church"></i>
-                    <span class="brand-text">ZCC FP01 Church Statistics</span>
+                    <div class="church-icon">
+                        <img src="../images/emblem.png" class="church-emblem" alt="Church Emblem">
+                    </div>
+                    <span class="brand-text">Updates</span>
                 </div>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
@@ -30,12 +32,13 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarMain">
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                    <li class="nav-item"><a class="nav-link" href="../index.html"><i class="fas fa-home"></i> Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="../pages/register.html"><i class="fas fa-user-plus"></i> Register</a></li>
+                    <li class="nav-item"><a class="nav-link" href="../home.html"><i class="fas fa-home"></i> Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="../pages/register.html"><i class="fas fa-user-plus"></i> Register</a></li>                    
                     <li class="nav-item"><a class="nav-link" href="../pages/visit.html"><i class="fas fa-calendar-check"></i> Visits</a></li>
                     <li class="nav-item"><a class="nav-link active" href="../pages/update.html"><i class="fas fa-edit"></i> Outcomes</a></li>
                     <li class="nav-item"><a class="nav-link" href="../pages/dashboard.html"><i class="fas fa-chart-line"></i> Dashboards</a></li> 
-                    <li class="nav-item"><a class="nav-link" href="../pages/events.html"><i class="fas fa-calendar-alt"></i> Events</a></li>      
+                    <li class="nav-item"><a class="nav-link" href="../pages/events.html"><i class="fas fa-calendar-alt"></i> Events</a></li>  
+                    <li class="nav-item"><a class="nav-link" href="index.html" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>        
                 </ul>
             </div>
         </div>
@@ -116,7 +119,6 @@
                             <option value="deceased">Deceased</option>
                             <option value="transfer_out">Transfer Out</option>
                             <option value="transfer_in">Transfer In</option>
-
                         </select>
                     </div>
                     

@@ -16,70 +16,72 @@
 </head>
 
 <body>
-    <script>
-        // ========== AUTHENTICATION CHECK ==========
-        // Check if user is logged in before showing page content
+<script>
+    // ========== AUTHENTICATION CHECK ==========
+    // Check if user is logged in before showing page content
+    
+    function checkAuthAndRedirect() {
+        const isLoggedIn = localStorage.getItem('zcc_auth');
         
-        function checkAuthAndRedirect() {
-            const isLoggedIn = localStorage.getItem('zcc_auth');
+        if (isLoggedIn !== 'true') {
+            // Redirect to login page
+            window.location.href = 'home.html';
+            return false;
+        }
+        
+        // Optional: Check session expiry (8 hours)
+        const loginTime = localStorage.getItem('zcc_login_time');
+        if (loginTime) {
+            const loginDate = new Date(loginTime);
+            const now = new Date();
+            const hoursDiff = (now - loginDate) / (1000 * 60 * 60);
             
-            if (isLoggedIn !== 'true') {
-                // Redirect to login page
-                window.location.href = '../index.html';
+            if (hoursDiff > 8) {
+                // Session expired
+                localStorage.removeItem('zcc_auth');
+                localStorage.removeItem('zcc_user');
+                localStorage.removeItem('zcc_login_time');
+                window.location.href = 'home.html';
                 return false;
             }
-            
-            // Optional: Check session expiry (8 hours)
-            const loginTime = localStorage.getItem('zcc_login_time');
-            if (loginTime) {
-                const loginDate = new Date(loginTime);
-                const now = new Date();
-                const hoursDiff = (now - loginDate) / (1000 * 60 * 60);
-                
-                if (hoursDiff > 8) {
-                    // Session expired
-                    localStorage.removeItem('zcc_auth');
-                    localStorage.removeItem('zcc_user');
-                    localStorage.removeItem('zcc_login_time');
-                    window.location.href = '../index.html';
-                    return false;
-                }
-            }
-            
-            return true;
         }
         
-        // Run auth check immediately
-        if (!checkAuthAndRedirect()) {
-            // Stop further script execution
-            throw new Error('Authentication required');
-        }
-    </script>
+        return true;
+    }
+    
+    // Run auth check immediately
+    if (!checkAuthAndRedirect()) {
+        // Stop further script execution
+        throw new Error('Authentication required');
+    }
 
+  
 
-        <!-- Navigation Bar -->
+</script>
+    <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg fixed-top">
         <div class="container">
             <a class="navbar-brand" href="../home.html">
-                <div class="logo-wrapper">
-                    <div class="church-icon">
-                        <img src="../images/emblem.png" class="church-emblem" alt="Church Emblem">
-                    </div>
-                    <span class="brand-text">Registration</span>
-                </div>
+ <div class="logo-wrapper">
+    <div class="church-icon">
+        <!-- CHANGED: Using the same emblem as index page -->
+        <img src="../images/emblem.png" class="church-emblem">
+    </div>
+    <span class="brand-text">Luhlokohla ZCC</span>
+</div>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarMain">
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">                    
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link" href="../home.html"><i class="fas fa-home"></i> Home</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="../pages/register.html"><i class="fas fa-user-plus"></i> Register</a></li>                    
+                     <li class="nav-item"><a class="nav-link active" href="../pages/register.html"><i class="fas fa-user-plus"></i> Register</a></li>                    
                     <li class="nav-item"><a class="nav-link" href="../pages/visit.html"><i class="fas fa-calendar-check"></i> Visits</a></li>
                     <li class="nav-item"><a class="nav-link" href="../pages/update.html"><i class="fas fa-edit"></i> Outcomes</a></li>
                     <li class="nav-item"><a class="nav-link" href="../pages/dashboard.html"><i class="fas fa-chart-line"></i> Dashboards</a></li> 
                     <li class="nav-item"><a class="nav-link" href="../pages/events.html"><i class="fas fa-calendar-alt"></i> Events</a></li>  
-                    <li class="nav-item"><a class="nav-link" href="index.html" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>    
+                    <li class="nav-item"><a class="nav-link" href="../index.html" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>   >     
                 </ul>
             </div>
         </div>
@@ -122,28 +124,26 @@
                 <table class="table table-hover align-middle" id="membersTable">
                     <thead>
                         <tr>
-                            <th>Firstname</th>
-                            <th>Surname</th>
-                            <th>PIN</th>
-                            <th>Contact</th>
-                            <th>Branch</th>
-                            <th>Church Activity</th>
-                            <th>Kganya</th>
-                            <th>Actions</th>
+                            <th>Firstname</th><th>Surname</th><th>PIN</th><th>Contact</th>
+                            <th>Branch</th><th>Church Activity</th><th>Kganya</th><th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="membersTableBody">
-                        <tr>
-                            <td colspan="8" class="text-center py-4">Loading members...</td>
-                        </tr>
+                        <!-- Dynamic content -->
                     </tbody>
                 </table>
             </div>
         </div>
+            
+
+
+
+
+
     </div>
 
     <!-- Register/Edit Member Modal with Multi-Step Form - 3/4 Screen Size -->
-    <div id="registerModal" class="custom-modal">
+    <div id="registerModal" class="custom-modal register-modal">
         <div class="modal-card modal-card-three-quarters">
             <div class="modal-header-custom">
                 <h5 id="registerModalTitle"><i class="fas fa-user-plus"></i> Register New Member</h5>
@@ -199,69 +199,41 @@
                             </div>
                             <div class="col-md-6 form-group-modern">
                                 <label>PIN (ID Number) *</label>
-                                <input type="text" id="pin" class="form-control-modern" required placeholder="Enter ID number (numbers only)">
-                            </div>
-                            <div class="col-md-6 form-group-modern">
-                                <label>Date of Birth</label>
-                                <input type="date" id="date_of_birth" class="form-control-modern">
+                                <input type="text" id="pin" class="form-control-modern" required>
                             </div>
                             <div class="col-md-6 form-group-modern">
                                 <label>Gender</label>
                                 <select id="gender" class="form-control-modern">
-                                    <option value="">Select Gender</option>
+                                    <option value="">Select Branch</option>
                                     <option value="Male">Male</option>
                                     <option value="Female">Female</option>
                                 </select>
                             </div>
                             <div class="col-md-6 form-group-modern">
                                 <label>Contact 1 *</label>
-                                <input type="tel" id="contact" class="form-control-modern" required placeholder="Enter phone number (numbers only)">
+                                <input type="tel" id="contact" class="form-control-modern" required>
                             </div>
                             <div class="col-md-6 form-group-modern">
                                 <label>Contact 2</label>
-                                <input type="tel" id="contact2" class="form-control-modern" placeholder="Enter phone number (numbers only)">
+                                <input type="tel" id="contact2" class="form-control-modern">
                             </div>
                             <div class="col-md-6 form-group-modern">
-                                <label>Branch Level *</label>
-                                <select id="branch_level" class="form-control-modern" required>
-                                    <option value="">Select Branch Level</option>
-                                    <option value="main">Main Branch</option>
-                                    <option value="sub">Sub-Branch</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 form-group-modern">
-                                <label>Branch *</label>
-                                <select id="branch" class="form-control-modern" required disabled>
-                                    <option value="">Select Branch Level First</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 form-group-modern">
-                                <label>Join Method *</label>
-                                <select id="join_method" class="form-control-modern" required>
-                                    <option value="">Select Join Method</option>
-                                    <option value="BAPTISM">Active (Baptism)</option>
-                                    <option value="CONVERT">Converts</option>
-                                    <option value="transfer_in">Transfer In</option>
-                                    <option value="backslided">Backslided</option>
-                                    <option value="transfer_out">Transfer Out</option>
+                                <label>Branch</label>
+                                <select id="branch" class="form-control-modern">
+                                    <option value="">Select Branch</option>
+                                    <option value="FP0">FP0</option><option value="FP1">FP1</option>
+                                    <option value="FP2">FP2</option><option value="FP3">FP3</option>
+                                    <option value="FP4">FP4</option><option value="FP5">FP5</option>
+                                    <option value="FP6">FP6</option><option value="FP7">FP7</option>
+                                    <option value="FP8">FP8</option><option value="FP9">FP9</option>
+                                    <option value="FP10">FP10</option><option value="FP11">FP11</option>
                                 </select>
                             </div>
                             <div class="col-md-6 form-group-modern">
                                 <label>Baptism Date</label>
                                 <input type="date" id="date_of_baptism" class="form-control-modern">
                             </div>
-                            <div class="col-md-6 form-group-modern">
-                                <label>Church Activity</label>
-                                <select id="church_activity" class="form-control-modern">
-                                    <option value="">Select Activity</option>
-                                    <option value="mokhukhu">Mokhukhu</option>
-                                    <option value="female_choir">Female Choir</option>
-                                    <option value="male_choir">Male Choir</option>
-                                    <option value="sunday_school">Sunday School</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-                            <div class="col-12 form-group-modern">
+                            <div class="col-6 form-group-modern">
                                 <label>Residential Address</label>
                                 <textarea id="residential_address" class="form-control-modern" rows="2" placeholder="Enter full residential address"></textarea>
                             </div>
@@ -275,6 +247,17 @@
                             <div class="col-md-6 form-group-modern">
                                 <label>Kganya Book Number</label>
                                 <input type="text" id="kganya_book_number" class="form-control-modern" placeholder="Enter book number">
+                            </div>
+                            <div class="col-md-6 form-group-modern">
+                                <label>Church Activity</label>
+                                <select id="church_activity" class="form-control-modern">
+                                    <option value="">Select Activity</option>
+                                    <option value="mokhukhu">Mokhukhu</option>
+                                    <option value="female_choir">Female Choir</option>
+                                    <option value="male_choir">Male Choir</option>
+                                    <option value="sunday_school">Sunday School</option>
+                                    <option value="other">Other</option>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -328,7 +311,7 @@
                                 <label>Executive Committee</label>
                                 <select id="executive_committee" class="form-control-modern">
                                     <option value="">Select Committee</option>
-                                    <option value="church_council">Church Council (20 Men)</option>
+                                    <option value="church_council">Church Council(20 Men)</option>
                                     <option value="lcdc">LCDC</option>
                                     <option value="dptt">DPTT</option>
                                     <option value="youth_committee">Youth Committee</option>
@@ -336,29 +319,31 @@
                                     <option value="chamber_of_commerce">Chamber of Commerce Committee</option>
                                     <option value="sunday_school_committee">Sunday School Committee</option> 
                                     <option value="Scholarship">Scholarship</option>
-                                    <option value="Minister">Minister</option>
+                                    <option value="Minister">Minister</option>                                   
+                       
+
                                 </select>
                             </div>
-                            <div class="col-md-6 form-group-modern" id="executive_committee_role_group" style="display:none;">
-                                <label>Executive Committee Role</label>
-                                <select id="executive_committee_role" class="form-control-modern">
-                                    <option value="">Select Role</option>
-                                    <option value="Branch_head">Head</option>
-                                    <option value="Branch_vicehead">Vice Head</option>
-                                    <option value="Chairman">Chair</option>
-                                    <option value="Vice_chairman">Vice chair</option>
-                                    <option value="Secretary">Secretary</option>
-                                    <option value="Vice_secretary">Vice Secretary</option>
-                                    <option value="Additional_secretary">Additional Secretary</option>
-                                    <option value="Treasurer">Treasurer</option>
-                                    <option value="Vice_Treasurer">Vice Treasurer</option>
-                                    <option value="Key_man">Key men</option>
-                                    <option value="Vice_keyman">Vice Key men</option>
-                                    <option value="Second_ten">Second Ten</option>
-                                    <option value="Teacher">Teacher</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </div>
+                                <div class="col-md-6 form-group-modern" id="executive_committee_role_group" style="display:none;">
+                                    <label>Executive Committee Role</label>
+                                    <select id="executive_committee_role" class="form-control-modern">
+                                            <option value="">Select Role</option>
+                                            <option value="Branch_head">Head</option>
+                                            <option value="Branch_vicehead">Vice Head</option>
+                                            <option value="Chairman">Chair</option>
+                                            <option value="Vice_chairman">Vice chair</option>
+                                            <option value="Secretary">Secretary</option>
+                                            <option value="Vice_secretary">Vice Secretary</option>
+                                            <option value="Additional_secretary">Additional Secretary</option>
+                                            <option value="Treasurer">Treasurer</option>
+                                            <option value="Vice_Treasurer">Vice Treasurer</option>
+                                            <option value="Key_man">Key men</option>
+                                            <option value="Vice_keyman">Vice Key men</option>
+                                            <option value="Second_ten">Second Ten</option>
+                                            <option value="Teacher">Teacher</option>
+                                            <option value="Other">Other</option>
+                                    </select>
+                                </div>
                         </div>
                     </div>
 
@@ -465,7 +450,7 @@
                     <p class="mt-2">You are about to permanently delete a member from the church registry. All member data will be lost forever.</p>
                 </div>
                 
-                <div class="member-details-card" id="memberDetailsCard" style="background: #f8f9fa; border-radius: 12px; padding: 1rem; margin: 1rem 0;">
+                <div class="member-details-card" id="deleteMemberDetails" style="background: #f8f9fa; border-radius: 12px; padding: 1rem; margin: 1rem 0;">
                     <h6><i class="fas fa-user"></i> Member to be deleted:</h6>
                     <div id="deleteMemberInfo"></div>
                 </div>
@@ -495,24 +480,24 @@
         </div>
     </footer>
 
-    <!-- Scripts - ORDER MATTERS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../config.public.js"></script>
-    <script src="../js/api-client.js"></script>
-    <script src="../js/register-page.js"></script>
-    
+    <!-- Scripts - ORDER MATTERS: api-client.js MUST come before register-page.js -->
+  <!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../config.public.js"></script>         <!-- ADD THIS FIRST -->
+<script src="../js/api-client.js"></script>
+<script src="../js/register-page.js"></script>
     <script>
-        // Logout functionality
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                localStorage.removeItem('zcc_auth');
-                localStorage.removeItem('zcc_user');
-                localStorage.removeItem('zcc_login_time');
-                window.location.href = '../index.html';
-            });
-        }
-    </script>
+    // Logout functionality
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            localStorage.removeItem('zcc_auth');
+            localStorage.removeItem('zcc_user');
+            localStorage.removeItem('zcc_login_time');
+            window.location.href = '../index.html';
+        });
+    }
+</script>
 </body>
 </html>
