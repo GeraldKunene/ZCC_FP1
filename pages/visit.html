@@ -15,6 +15,45 @@
     <link rel="stylesheet" href="../css/visits-page.css">
 </head>
 <body>
+    <script>
+        // ========== AUTHENTICATION CHECK ==========
+        // Check if user is logged in before showing page content
+        
+        function checkAuthAndRedirect() {
+            const isLoggedIn = localStorage.getItem('zcc_auth');
+            
+            if (isLoggedIn !== 'true') {
+                // Redirect to login page
+                window.location.href = '../index.html';
+                return false;
+            }
+            
+            // Optional: Check session expiry (8 hours)
+            const loginTime = localStorage.getItem('zcc_login_time');
+            if (loginTime) {
+                const loginDate = new Date(loginTime);
+                const now = new Date();
+                const hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+                
+                if (hoursDiff > 8) {
+                    // Session expired
+                    localStorage.removeItem('zcc_auth');
+                    localStorage.removeItem('zcc_user');
+                    localStorage.removeItem('zcc_login_time');
+                    window.location.href = '../index.html';
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        // Run auth check immediately
+        if (!checkAuthAndRedirect()) {
+            // Stop further script execution
+            throw new Error('Authentication required');
+        }
+    </script>
 
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg fixed-top">

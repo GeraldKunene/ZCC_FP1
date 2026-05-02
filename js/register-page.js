@@ -1,3 +1,19 @@
+// ========== ADMIN CHECK FUNCTIONS ==========
+function isCurrentUserAdmin() {
+    // Check if user is logged in and is admin
+    // You'll need to adjust this based on how you store user session data
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    return currentUser.role === 'admin' || currentUser.isAdmin === true;
+}
+
+function checkAdminPermission(action) {
+    if (!isCurrentUserAdmin()) {
+        showMessage(`Only administrators can ${action} members.`, 'error');
+        return false;
+    }
+    return true;
+}
+
 // ========== REGISTER PAGE - GOOGLE SHEETS BACKEND ==========
 let members = [];
 let filteredMembers = [];
@@ -157,10 +173,12 @@ function renderMembersTable(dataArray) {
     tbody.innerHTML = "";
     
     if (!dataArray || dataArray.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No members found. Click "Register Member" to add one.  </td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No members found. Click "Register Member" to add one.</td></tr>';
         updateMemberCount(0);
         return;
     }
+    
+    const isAdmin = isCurrentUserAdmin();
     
     dataArray.forEach(m => {
         const row = tbody.insertRow();
@@ -183,10 +201,19 @@ function renderMembersTable(dataArray) {
         
         const actionCell = row.insertCell(7);
         actionCell.className = "action-buttons";
-        actionCell.innerHTML = `
+        
+        // Always show edit button, but delete button only for admins
+        let actionsHtml = `
             <button class="btn btn-sm btn-outline-success edit-member-btn" data-id="${m.member_id}"><i class="fas fa-edit"></i> Edit</button>
-            <button class="btn btn-sm btn-outline-danger delete-member-btn" data-id="${m.member_id}"><i class="fas fa-trash-alt"></i> Del</button>
         `;
+        
+        if (isAdmin) {
+            actionsHtml += `
+                <button class="btn btn-sm btn-outline-danger delete-member-btn" data-id="${m.member_id}"><i class="fas fa-trash-alt"></i> Del</button>
+            `;
+        }
+        
+        actionCell.innerHTML = actionsHtml;
     });
     
     updateMemberCount(dataArray.length);
@@ -864,7 +891,13 @@ if (memberForm) {
 }
 
 // ========== DELETE FUNCTIONS ==========
+// ========== DELETE FUNCTIONS ==========
 function openDeleteModal(memberId) {
+    // Check if user is admin first
+    if (!checkAdminPermission('delete')) {
+        return;
+    }
+    
     const member = members.find(m => m.member_id === memberId);
     if (member) {
         memberToDelete = member;
@@ -900,6 +933,12 @@ function openDeleteModal(memberId) {
 }
 
 async function confirmDelete() {
+    // Double-check admin permission before proceeding
+    if (!checkAdminPermission('delete')) {
+        closeDeleteModal();
+        return;
+    }
+    
     const confirmationText = document.getElementById('deleteConfirmationInput');
     if (!confirmationText || confirmationText.value !== 'CONFIRM DELETE') {
         showMessage('Please type "CONFIRM DELETE" to proceed with deletion', 'error');
@@ -923,6 +962,8 @@ async function confirmDelete() {
         }
     }
 }
+
+
 
 function closeDeleteModal() {
     const deleteModal = document.getElementById('deleteModal');
