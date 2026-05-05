@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Luhlokohla ZCC | Home - Welcome to MyKganya Portal</title>
+    <title> Home </title>
     
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -16,19 +16,27 @@
 </head>
 <body>
 <script>
-    // ========== AUTHENTICATION CHECK ==========
-    // Check if user is logged in before showing page content
+    // ========== AUTHENTICATION CHECK WITH FORCE RELOG ==========
+    
+    // Version number - increment this when you want to force all users to re-login
+    const SESSION_VERSION = 2;  // Change to 3, 4, etc. when you need to force re-login
     
     function checkAuthAndRedirect() {
         const isLoggedIn = localStorage.getItem('zcc_auth');
+        const storedVersion = localStorage.getItem('zcc_session_version');
+        
+        // FORCE RE-LOGIN: Check if session version matches
+        if (storedVersion !== String(SESSION_VERSION)) {
+            console.log('Session version mismatch. Forcing re-login...');
+            forceLogout();
+            return false;
+        }
         
         if (isLoggedIn !== 'true') {
-            // Redirect to login page
             window.location.href = 'index.html';
             return false;
         }
         
-        // Optional: Check session expiry (8 hours)
         const loginTime = localStorage.getItem('zcc_login_time');
         if (loginTime) {
             const loginDate = new Date(loginTime);
@@ -36,11 +44,7 @@
             const hoursDiff = (now - loginDate) / (1000 * 60 * 60);
             
             if (hoursDiff > 8) {
-                // Session expired
-                localStorage.removeItem('zcc_auth');
-                localStorage.removeItem('zcc_user');
-                localStorage.removeItem('zcc_login_time');
-                window.location.href = 'index.html';
+                forceLogout();
                 return false;
             }
         }
@@ -48,9 +52,24 @@
         return true;
     }
     
-    // Run auth check immediately
+    function forceLogout() {
+        // Clear all session-related data
+        localStorage.removeItem('zcc_session_token');
+        localStorage.removeItem('zcc_auth');
+        localStorage.removeItem('zcc_user');
+        localStorage.removeItem('zcc_role');
+        localStorage.removeItem('zcc_login_time');
+        localStorage.removeItem('zcc_session_version');
+        
+        // Optional: Clear cached data
+        localStorage.removeItem('zcc_members');
+        localStorage.removeItem('zcc_events');
+        localStorage.removeItem('zcc_payments');
+        
+        window.location.href = 'index.html';
+    }
+    
     if (!checkAuthAndRedirect()) {
-        // Stop further script execution
         throw new Error('Authentication required');
     }
 </script>
@@ -64,7 +83,7 @@
                     <div class="church-icon">
                         <img src="../images/emblem.png" class="church-emblem" alt="Church Emblem">
                     </div>
-                    <span class="brand-text">ZCC Statistics</span>
+                    <span class="brand-text"> Statistics</span>
                 </div>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
@@ -78,6 +97,7 @@
                     <li class="nav-item"><a class="nav-link" href="pages/update.html"><i class="fas fa-edit"></i> Outcomes</a></li>
                     <li class="nav-item"><a class="nav-link" href="pages/dashboard.html"><i class="fas fa-chart-line"></i> Dashboards</a></li>
                     <li class="nav-item"><a class="nav-link" href="pages/events.html"><i class="fas fa-calendar-alt"></i> Events</a></li>  
+                    <li class="nav-item"><a class="nav-link" href="pages/payments.html"><i class="fas fa-money-bill-wave"></i> Payments</a></li>
                     <li class="nav-item"><a class="nav-link" href="index.html" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>   
                 </ul>
             </div>
@@ -90,7 +110,7 @@
         <div class="container hero-content">
             <div class="hero-text" data-aos="fade-up">
                 <h1 class="animate-title">
-                    <i class="fas fa-church"></i> Welcome to Luhlokohla ZCC
+                    <i class="fas fa-church"></i> Welcome to the statistics management system
                 </h1>
                 <p class="animate-subtitle">A place of worship, fellowship, and spiritual growth. Join us in our mission to spread God's love.</p>
                 <div class="hero-buttons">
@@ -269,7 +289,7 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-section">
-                    <i class="fas fa-heart"></i> Luhlokohla ZCC Church Management System
+                    <i class="fas fa-heart"></i> Management System
                 </div>
                 <div class="footer-section">
                     <span id="currentYear"></span> &copy; All Rights Reserved

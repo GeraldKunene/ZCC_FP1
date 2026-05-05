@@ -31,7 +31,6 @@ async function loadData() {
 }
 
 // Render members table
-// Render members table - FIXED to handle non-string values
 function renderMembersTable(dataArray) {
     const tbody = document.getElementById("membersTableBody");
     if (!tbody) return;
@@ -39,7 +38,7 @@ function renderMembersTable(dataArray) {
     tbody.innerHTML = "";
     
     if (dataArray.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No members found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No members found.��</tr>';
         const memberCountBadge = document.getElementById("memberCountBadge");
         if (memberCountBadge) memberCountBadge.innerText = "0 members";
         return;
@@ -110,8 +109,7 @@ function handleHistoryClick(e) {
     openHistoryModal(id);
 }
 
-// Search handling - FIXED to properly search and render
-// Search handling - FIXED to handle non-string values
+// Search handling
 function applySearchAndRender() {
     const searchInput = document.getElementById("globalSearchInput");
     if (!searchInput) return;
@@ -123,9 +121,8 @@ function applySearchAndRender() {
         renderMembersTable(members);
         showMessage(`Showing all ${members.length} members`, "success");
     } else {
-        // Filter members based on search term - FIXED: Convert all values to strings safely
+        // Filter members based on search term
         const filtered = members.filter(m => {
-            // Safely convert each field to string before calling toLowerCase()
             const firstName = (m.firstname || '').toString().toLowerCase();
             const surname = (m.surname || '').toString().toLowerCase();
             const pin = (m.pin !== undefined && m.pin !== null) ? m.pin.toString().toLowerCase() : '';
@@ -157,6 +154,7 @@ function resetSearch() {
     showMessage('Search cleared. Showing all members.', 'success');
 }
 
+// Show message on top of modals with higher z-index
 function showMessage(msg, type) {
     const container = document.getElementById("errorMessageContainer");
     const span = document.getElementById("errorText");
@@ -165,6 +163,13 @@ function showMessage(msg, type) {
     
     span.innerText = msg;
     container.style.display = "block";
+    container.style.zIndex = "10000"; // Higher z-index to appear above modals
+    container.style.position = "fixed"; // Fixed position to stay on top
+    container.style.top = "20px";
+    container.style.left = "50%";
+    container.style.transform = "translateX(-50%)";
+    container.style.minWidth = "300px";
+    container.style.textAlign = "center";
     
     if(type === "success") {
         container.style.background = "#d1e7dd";
@@ -190,20 +195,24 @@ function openStatusModal(memberId) {
         
         // Display member info
         const memberInfoDiv = document.getElementById("selectedMemberInfo");
-        memberInfoDiv.innerHTML = `
-            <div class="member-detail-row"><strong>Name:</strong> ${escapeHtml(member.firstname)} ${escapeHtml(member.surname)}</div>
-            <div class="member-detail-row"><strong>PIN:</strong> ${escapeHtml(member.pin)}</div>
-            <div class="member-detail-row"><strong>Branch:</strong> ${member.branch || 'N/A'}</div>
-            <div class="member-detail-row"><strong>Current Status:</strong> ${member.status || 'Active'}</div>
-        `;
+        if (memberInfoDiv) {
+            memberInfoDiv.innerHTML = `
+                <div class="member-detail-row"><strong>Name:</strong> ${escapeHtml(member.firstname)} ${escapeHtml(member.surname)}</div>
+                <div class="member-detail-row"><strong>PIN:</strong> ${escapeHtml(member.pin)}</div>
+                <div class="member-detail-row"><strong>Branch:</strong> ${member.branch || 'N/A'}</div>
+                <div class="member-detail-row"><strong>Current Status:</strong> ${member.status || 'Active'}</div>
+            `;
+        }
         
         resetStatusForm();
-        document.getElementById("statusModal").style.display = "flex";
+        const modal = document.getElementById("statusModal");
+        if (modal) modal.style.display = "flex";
     }
 }
 
 function closeStatusModal() { 
-    document.getElementById("statusModal").style.display = "none"; 
+    const modal = document.getElementById("statusModal");
+    if (modal) modal.style.display = "none"; 
 }
 
 function resetStatusForm() {
@@ -213,10 +222,16 @@ function resetStatusForm() {
     document.getElementById("sendingBranch").value = "";
     document.getElementById("dateOfStatus").value = "";
     document.getElementById("statusNotes").value = "";
-    document.getElementById("transferredToGroup").style.display = "none";
-    document.getElementById("transferredFromGroup").style.display = "none";
-    document.getElementById("convertFromGroup").style.display = "block";
-    document.getElementById("dateOfStatusLabel").innerHTML = "Outcome Date";
+    
+    const transferredToGroup = document.getElementById("transferredToGroup");
+    const transferredFromGroup = document.getElementById("transferredFromGroup");
+    const convertFromGroup = document.getElementById("convertFromGroup");
+    const dateLabel = document.getElementById("dateOfStatusLabel");
+    
+    if (transferredToGroup) transferredToGroup.style.display = "none";
+    if (transferredFromGroup) transferredFromGroup.style.display = "none";
+    if (convertFromGroup) convertFromGroup.style.display = "block";
+    if (dateLabel) dateLabel.innerHTML = "Outcome Date";
 }
 
 // Toggle fields based on outcome
@@ -263,7 +278,7 @@ function updateDateLabel() {
     }
 }
 
-// Save outcome to Google Sheets with loading state
+// Save outcome to Google Sheets
 async function saveOutcomeToServer(outcomeData) {
     try {
         const result = await api.createOutcome(outcomeData);
@@ -274,7 +289,63 @@ async function saveOutcomeToServer(outcomeData) {
     }
 }
 
-// Handle status form submission with loading state
+// Update member status using existing member data from the array
+async function updateMemberStatusOnly(memberId, newStatus, receivingBranch, sendingBranch) {
+    try {
+        // Find the member in our existing members array
+        const currentMember = members.find(m => String(m.member_id) === String(memberId));
+        
+        if (!currentMember) {
+            console.error('Member not found in array:', memberId);
+            return { success: false, error: 'Member not found' };
+        }
+        
+        // Preserve ALL existing data from the current member
+        const updateData = {
+            // Keep all existing fields exactly as they are
+            firstname: currentMember.firstname || '',
+            surname: currentMember.surname || '',
+            middlename: currentMember.middlename || '',
+            pin: currentMember.pin || '',
+            contact: currentMember.contact || '',
+            email: currentMember.email || '',
+            gender: currentMember.gender || '',
+            branch: currentMember.branch || '',
+            status: newStatus, // Only update the status
+            kganya_member: currentMember.kganya_member || 'No',
+            date_of_birth: currentMember.date_of_birth || '',
+            address: currentMember.address || '',
+            // Preserve any other fields that might exist
+            member_id: currentMember.member_id,
+            registration_date: currentMember.registration_date || new Date().toISOString()
+        };
+        
+        // Only change branch if it's a transfer in
+        if (newStatus === "transfer_in" && sendingBranch) {
+            updateData.branch = sendingBranch;
+        }
+        
+        // Add transfer tracking fields
+        if (newStatus === "transfer_out" && receivingBranch) {
+            updateData.transferred_to = receivingBranch;
+        }
+        
+        if (newStatus === "transfer_in" && sendingBranch) {
+            updateData.transferred_from = sendingBranch;
+        }
+        
+        console.log('Updating member with preserved data:', updateData);
+        
+        // Call update member API with complete data
+        const result = await api.updateMember(memberId, updateData);
+        return result;
+    } catch (error) {
+        console.error('Error updating member status:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// Handle status form submission with loading indicators
 const statusForm = document.getElementById("statusForm");
 if (statusForm) {
     statusForm.addEventListener("submit", async function(e) {
@@ -308,10 +379,8 @@ if (statusForm) {
             return;
         }
         
-        const memberIndex = members.findIndex(m => m.member_id == memberId);
-        if (memberIndex !== -1) {
-            const member = members[memberIndex];
-            
+        const member = members.find(m => String(m.member_id) === String(memberId));
+        if (member) {
             const outcomeRecord = {
                 outcome_id: 'OUT_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
                 member_id: memberId,
@@ -330,36 +399,35 @@ if (statusForm) {
             const saveBtn = document.querySelector("#statusForm .btn-save");
             const originalBtnText = saveBtn.innerHTML;
             saveBtn.disabled = true;
-            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving outcome...';
             
-            showMessage("Saving outcome to server...", "success");
+            showMessage("Saving outcome record...", "success");
             
-            // Save to outcomes sheet
+            // First, save the outcome record
             const saveResult = await saveOutcomeToServer(outcomeRecord);
             
             if (saveResult.success) {
-                // Update member status in members sheet
-                const updateData = { status: outcome };
-                if (outcome === "transfer_out" && receivingBranch) {
-                    updateData.transferred_to = receivingBranch;
+                // Update save button to show updating status
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating member status...';
+                showMessage("Outcome saved! Updating member status...", "success");
+                
+                // Update member status (preserving all other data)
+                const updateResult = await updateMemberStatusOnly(memberId, outcome, receivingBranch, sendingBranch);
+                
+                if (updateResult.success) {
+                    showMessage(`✓ Status updated for ${member.firstname} ${member.surname}`, "success");
+                    closeStatusModal();
+                    
+                    // Reload data to reflect changes
+                    await loadData();
+                } else {
+                    showMessage("⚠ Outcome saved but member status update failed: " + (updateResult.error || "Unknown error"), "error");
                 }
-                if (outcome === "transfer_in" && sendingBranch) {
-                    updateData.transferred_from = sendingBranch;
-                    updateData.branch = sendingBranch;
-                }
-                
-                await api.updateMember(memberId, updateData);
-                
-                showMessage(`Status updated for ${member.firstname} ${member.surname}`, "success");
-                closeStatusModal();
-                
-                // Reload data to reflect changes
-                await loadData();
             } else {
-                showMessage("Error saving outcome: " + (saveResult.error || "Unknown error"), "error");
+                showMessage("✗ Error saving outcome: " + (saveResult.error || "Unknown error"), "error");
             }
             
-            // Re-enable save button
+            // Re-enable save button and restore original text
             saveBtn.disabled = false;
             saveBtn.innerHTML = originalBtnText;
         } else {
@@ -370,41 +438,58 @@ if (statusForm) {
 
 // ========== HISTORY MODAL FUNCTIONS ==========
 
-// Open History Modal
+// Open History Modal - FIXED with null checks
 async function openHistoryModal(memberId) {
-    const member = members.find(m => m.member_id == memberId);
+    const member = members.find(m => String(m.member_id) === String(memberId));
     if (member) {
         currentHistoryMember = member;
         
-        // Set modal title with member name
-        document.getElementById("historyModalTitle").innerHTML = `<i class="fas fa-history"></i> Outcome History: ${escapeHtml(member.firstname)} ${escapeHtml(member.surname)}`;
+        // Check if modal title element exists
+        const modalTitle = document.getElementById("historyModalTitle");
+        if (modalTitle) {
+            modalTitle.innerHTML = `<i class="fas fa-history"></i> Outcome History: ${escapeHtml(member.firstname)} ${escapeHtml(member.surname)}`;
+        }
         
         // Load outcomes from server
         await loadMemberOutcomes(memberId);
         
-        document.getElementById("historyModal").style.display = "flex";
+        const modal = document.getElementById("historyModal");
+        if (modal) modal.style.display = "flex";
+    } else {
+        showMessage("Member not found", "error");
     }
 }
 
 function closeHistoryModal() {
-    document.getElementById("historyModal").style.display = "none";
+    const modal = document.getElementById("historyModal");
+    if (modal) modal.style.display = "none";
 }
 
 async function loadMemberOutcomes(memberId) {
     const historyList = document.getElementById("historyList");
+    if (!historyList) return;
+    
+    // Show loading state
     historyList.innerHTML = '<div class="history-loading"><i class="fas fa-spinner fa-pulse"></i><br>Loading outcome history...</div>';
     
     try {
+        // Fetch all outcomes
         const outcomesResult = await api.getOutcomes();
         
+        console.log('Outcomes result:', outcomesResult);
+        
         if (outcomesResult.success && outcomesResult.data) {
-            const memberOutcomes = outcomesResult.data.filter(o => o.member_id == memberId);
+            // Filter outcomes for this member
+            const memberOutcomes = outcomesResult.data.filter(o => String(o.member_id) === String(memberId));
+            
+            console.log(`Found ${memberOutcomes.length} outcomes for member ${memberId}`);
             
             if (memberOutcomes.length === 0) {
                 historyList.innerHTML = '<div class="history-empty"><i class="fas fa-archive"></i><br>No outcome history found for this member.</div>';
                 return;
             }
             
+            // Sort by outcome date (newest first)
             memberOutcomes.sort((a, b) => new Date(b.outcome_date) - new Date(a.outcome_date));
             
             let html = '';
@@ -414,7 +499,7 @@ async function loadMemberOutcomes(memberId) {
                 const previousStatus = outcome.previous_status || 'N/A';
                 const recordedAt = outcome.recorded_at ? new Date(outcome.recorded_at).toLocaleString() : 'N/A';
                 const notes = outcome.notes || 'No notes';
-                const outcomeId = outcome.outcome_id;
+                const outcomeId = outcome.outcome_id || outcome.id;
                 
                 let statusClass = 'active';
                 let statusIcon = 'fa-check-circle';
@@ -439,14 +524,14 @@ async function loadMemberOutcomes(memberId) {
                     transferInfo = `
                         <div class="transfer-info">
                             <i class="fas fa-exchange-alt"></i>
-                            <span>Transferred To: <strong>${outcome.transferred_to}</strong></span>
+                            <span>Transferred To: <strong>${escapeHtml(outcome.transferred_to)}</strong></span>
                         </div>`;
                 }
                 if (outcome.transferred_from) {
                     transferInfo = `
                         <div class="transfer-info">
                             <i class="fas fa-exchange-alt"></i>
-                            <span>Transferred From: <strong>${outcome.transferred_from}</strong></span>
+                            <span>Transferred From: <strong>${escapeHtml(outcome.transferred_from)}</strong></span>
                         </div>`;
                 }
                 
@@ -488,7 +573,7 @@ async function loadMemberOutcomes(memberId) {
                         <div class="history-body">
                             <div class="history-detail">
                                 <i class="fas fa-arrow-left arrow-icon"></i>
-                                <span>Previous Status: <strong>${previousStatus}</strong></span>
+                                <span>Previous Status: <strong>${escapeHtml(previousStatus)}</strong></span>
                             </div>
                             <div class="history-detail">
                                 <i class="fas fa-arrow-right arrow-icon"></i>
@@ -526,6 +611,8 @@ async function deleteOutcomeRecord(outcomeId, memberId) {
                 showMessage('Outcome record deleted successfully', 'success');
                 // Reload the history for this member
                 await loadMemberOutcomes(memberId);
+                // Also reload members to update current status display
+                await loadData();
             } else {
                 showMessage('Error deleting record: ' + (result.error || 'Unknown error'), 'error');
             }
@@ -548,14 +635,14 @@ function setupEventListeners() {
     const convertFrom = document.getElementById("convertFrom");
     const searchInput = document.getElementById("globalSearchInput");
     
-    // FIXED: Search button handler
+    // Search button handler
     if (searchBtn) {
         searchBtn.removeEventListener("click", applySearchAndRender);
         searchBtn.addEventListener("click", applySearchAndRender);
         console.log("Search button listener attached");
     }
     
-    // FIXED: Reset button handler
+    // Reset button handler
     if (resetBtn) {
         resetBtn.removeEventListener("click", resetSearch);
         resetBtn.addEventListener("click", resetSearch);

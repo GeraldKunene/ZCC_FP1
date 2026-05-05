@@ -1,14 +1,5 @@
-// ========== GOOGLE SHEETS API CLIENT ==========
-console.log('Loading api-client.js...');
-
-// Use existing global variables, don't redeclare
-// API_BASE_URL and API_KEY should already be defined by config.js
-
-// If they're not defined yet, wait for them
-if (typeof API_BASE_URL === 'undefined' || typeof API_KEY === 'undefined') {
-    console.warn('API_BASE_URL or API_KEY not defined, waiting...');
-    // They will be defined by config.js which should load first
-}
+// ========== GOOGLE SHEETS API CLIENT - SECURE VERSION ==========
+console.log('Loading secure api-client.js...');
 
 class ChurchAPI {
   constructor(baseUrl) {
@@ -17,9 +8,18 @@ class ChurchAPI {
     this.pendingRequests = new Map();
   }
 
+  /**
+   * Make an authenticated request to the API
+   * Uses Bearer token in Authorization header (secure)
+   */
   async request(action, method = 'POST', data = {}, timeout = 15000) {
-    // Use global API_KEY
-    const securedData = { ...data, api_key: typeof API_KEY !== 'undefined' ? API_KEY : '', timestamp: Date.now() };
+    // Get session token from localStorage
+    const sessionToken = localStorage.getItem('zcc_session_token');
+    
+    const securedData = { 
+      ...data, 
+      timestamp: Date.now() 
+    };
     
     if (method === 'GET') {
       const cacheKey = `${action}_${JSON.stringify(securedData)}`;
@@ -35,13 +35,23 @@ class ChurchAPI {
     }
 
     let url = this.baseUrl;
-    let options = { method: method, mode: 'cors', redirect: 'follow' };
+    let options = { 
+      method: method, 
+      mode: 'cors', 
+      redirect: 'follow',
+      headers: {}
+    };
+
+    // IMPORTANT: Use Authorization header instead of URL parameter
+    if (sessionToken) {
+      options.headers['Authorization'] = `Bearer ${sessionToken}`;
+    }
 
     if (method === 'GET') {
       const params = new URLSearchParams({ action, ...securedData });
       url += `?${params.toString()}`;
     } else {
-      options.headers = { 'Content-Type': 'text/plain;charset=utf-8' };
+      options.headers['Content-Type'] = 'text/plain;charset=utf-8';
       options.body = JSON.stringify({ action, ...securedData });
     }
 
@@ -55,6 +65,13 @@ class ChurchAPI {
         clearTimeout(timeoutId);
         const result = await response.json();
         
+        // If session expired, redirect to login
+        if (!result.success && (result.error === 'Session expired' || result.error?.includes('Session'))) {
+          await this.logout();
+          window.location.href = '../index.html';
+          return result;
+        }
+        
         if (method === 'GET' && result.success) {
           const cacheKey = `${action}_${JSON.stringify(securedData)}`;
           this.cache.set(cacheKey, { data: result, timestamp: Date.now() });
@@ -62,6 +79,7 @@ class ChurchAPI {
         return result;
       } catch (error) {
         clearTimeout(timeoutId);
+        console.error('API Request Error:', error);
         return { success: false, error: error.message };
       } finally {
         this.pendingRequests.delete(requestKey);
@@ -76,6 +94,46 @@ class ChurchAPI {
     this.cache.clear();
   }
 
+  // Auth methods
+  async authenticate(username, password) {
+    const result = await this.request('authenticate', 'POST', { username, password });
+    if (result.success && result.data?.session_token) {
+      localStorage.setItem('zcc_session_token', result.data.session_token);
+      localStorage.setItem('zcc_auth', 'true');
+      localStorage.setItem('zcc_user', result.data.username);
+      localStorage.setItem('zcc_role', result.data.role || 'user');
+      localStorage.setItem('zcc_login_time', new Date().toISOString());
+    }
+    return result;
+  }
+  
+  async logout() {
+    const sessionToken = localStorage.getItem('zcc_session_token');
+    const result = await this.request('logout', 'POST', {});
+    
+    // Clear ALL localStorage items
+    localStorage.removeItem('zcc_session_token');
+    localStorage.removeItem('zcc_csrf_token');
+    localStorage.removeItem('zcc_auth');
+    localStorage.removeItem('zcc_user');
+    localStorage.removeItem('zcc_role');
+    localStorage.removeItem('zcc_login_time');
+    
+    // Clear cache
+    this.clearCache();
+    
+    return result;
+  }
+
+  async changePassword(currentPassword, newPassword) {
+    const result = await this.request('changePassword', 'POST', { 
+      currentPassword, 
+      newPassword 
+    });
+    return result;
+  }
+
+  // All other methods remain the same...
   async getEvents() {
     return this.request('getEvents', 'GET');
   }
@@ -126,8 +184,30 @@ class ChurchAPI {
     return this.request('getOutcomes', 'GET');
   }
 
-  async authenticate(username, password) {
-    return this.request('authenticate', 'POST', { username, password });
+  async getPayments() {
+    return this.request('getPayments', 'GET');
+  }
+
+  async createPayment(paymentData) {
+    const result = await this.request('createPayment', 'POST', paymentData);
+    this.clearCache();
+    return result;
+  }
+
+  async updatePayment(paymentId, paymentData) {
+    const result = await this.request('updatePayment', 'POST', { payment_id: paymentId, ...paymentData });
+    this.clearCache();
+    return result;
+  }
+
+  async deletePayment(paymentId) {
+    const result = await this.request('deletePayment', 'POST', { payment_id: paymentId });
+    this.clearCache();
+    return result;
+  }
+
+  async getMemberPayments(memberId) {
+    return this.request('getMemberPayments', 'GET', { member_id: memberId });
   }
 
   async createOutcome(outcomeData) {
@@ -167,9 +247,27 @@ class ChurchAPI {
   }
 }
 
-// Create global api instance (use var to avoid redeclaration)
+// Create global api instance
 if (typeof api === 'undefined') {
     var api = new ChurchAPI(API_BASE_URL);
     window.api = api;
-    console.log('✅ ChurchAPI initialized, api object created');
+    console.log('✅ Secure ChurchAPI initialized');
 }
+
+// Session health check (optional)
+setInterval(async () => {
+  const sessionToken = localStorage.getItem('zcc_session_token');
+  if (sessionToken) {
+    // Simple ping to check if session is still valid
+    try {
+      const result = await api.getVisits(); // light request
+      if (!result.success && result.error?.includes('Session')) {
+        console.log('Session expired, redirecting to login');
+        localStorage.clear();
+        window.location.href = '../index.html';
+      }
+    } catch (e) {
+      console.log('Session check failed');
+    }
+  }
+}, 5 * 60 * 1000); // Check every 5 minutes
