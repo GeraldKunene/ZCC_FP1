@@ -1,25 +1,27 @@
-// ========== GOOGLE SHEETS API CLIENT - SECURE VERSION ==========
-console.log('Loading secure api-client.js...');
+// ========== GOOGLE SHEETS API CLIENT ==========
+console.log('Loading api-client.js...');
+
+// Use existing global variables, don't redeclare
+// API_BASE_URL and API_KEY should already be defined by config.js
+
+// If they're not defined yet, wait for them
+if (typeof API_BASE_URL === 'undefined' || typeof API_KEY === 'undefined') {
+    console.warn('API_BASE_URL or API_KEY not defined, waiting...');
+    // They will be defined by config.js which should load first
+}
 
 class ChurchAPI {
   constructor(baseUrl) {
     this.baseUrl = baseUrl;
     this.cache = new Map();
     this.pendingRequests = new Map();
+    this.authToken = localStorage.getItem('auth_token');
+    this.currentUser = null;
   }
 
-  /**
-   * Make an authenticated request to the API
-   * Uses Bearer token in Authorization header (secure)
-   */
   async request(action, method = 'POST', data = {}, timeout = 15000) {
-    // Get session token from localStorage
-    const sessionToken = localStorage.getItem('zcc_session_token');
-    
-    const securedData = { 
-      ...data, 
-      timestamp: Date.now() 
-    };
+    // Use global API_KEY
+    const securedData = { ...data, api_key: typeof API_KEY !== 'undefined' ? API_KEY : '', timestamp: Date.now() };
     
     if (method === 'GET') {
       const cacheKey = `${action}_${JSON.stringify(securedData)}`;
@@ -35,23 +37,13 @@ class ChurchAPI {
     }
 
     let url = this.baseUrl;
-    let options = { 
-      method: method, 
-      mode: 'cors', 
-      redirect: 'follow',
-      headers: {}
-    };
-
-    // IMPORTANT: Use Authorization header instead of URL parameter
-    if (sessionToken) {
-      options.headers['Authorization'] = `Bearer ${sessionToken}`;
-    }
+    let options = { method: method, mode: 'cors', redirect: 'follow' };
 
     if (method === 'GET') {
       const params = new URLSearchParams({ action, ...securedData });
       url += `?${params.toString()}`;
     } else {
-      options.headers['Content-Type'] = 'text/plain;charset=utf-8';
+      options.headers = { 'Content-Type': 'text/plain;charset=utf-8' };
       options.body = JSON.stringify({ action, ...securedData });
     }
 
@@ -65,13 +57,6 @@ class ChurchAPI {
         clearTimeout(timeoutId);
         const result = await response.json();
         
-        // If session expired, redirect to login
-        if (!result.success && (result.error === 'Session expired' || result.error?.includes('Session'))) {
-          await this.logout();
-          window.location.href = '../index.html';
-          return result;
-        }
-        
         if (method === 'GET' && result.success) {
           const cacheKey = `${action}_${JSON.stringify(securedData)}`;
           this.cache.set(cacheKey, { data: result, timestamp: Date.now() });
@@ -79,7 +64,7 @@ class ChurchAPI {
         return result;
       } catch (error) {
         clearTimeout(timeoutId);
-        console.error('API Request Error:', error);
+        console.error(`Request error for ${action}:`, error);
         return { success: false, error: error.message };
       } finally {
         this.pendingRequests.delete(requestKey);
@@ -94,46 +79,82 @@ class ChurchAPI {
     this.cache.clear();
   }
 
-  // Auth methods
+  // Authentication methods
   async authenticate(username, password) {
     const result = await this.request('authenticate', 'POST', { username, password });
-    if (result.success && result.data?.session_token) {
-      localStorage.setItem('zcc_session_token', result.data.session_token);
-      localStorage.setItem('zcc_auth', 'true');
-      localStorage.setItem('zcc_user', result.data.username);
-      localStorage.setItem('zcc_role', result.data.role || 'user');
-      localStorage.setItem('zcc_login_time', new Date().toISOString());
+    if (result.success && result.data) {
+      this.currentUser = result.data;
+      this.authToken = btoa(`${username}:${Date.now()}`);
+      localStorage.setItem('auth_token', this.authToken);
+      localStorage.setItem('current_user', JSON.stringify(result.data));
     }
     return result;
   }
-  
+
+  isAuthenticated() {
+    // Check if user is authenticated
+    const token = localStorage.getItem('auth_token');
+    const user = localStorage.getItem('current_user');
+    
+    if (token && user) {
+      try {
+        this.currentUser = JSON.parse(user);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+    return false;
+  }
+
   async logout() {
-    const sessionToken = localStorage.getItem('zcc_session_token');
-    const result = await this.request('logout', 'POST', {});
-    
-    // Clear ALL localStorage items
-    localStorage.removeItem('zcc_session_token');
-    localStorage.removeItem('zcc_csrf_token');
-    localStorage.removeItem('zcc_auth');
-    localStorage.removeItem('zcc_user');
-    localStorage.removeItem('zcc_role');
-    localStorage.removeItem('zcc_login_time');
-    
-    // Clear cache
+    // Clear local storage
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('current_user');
+    this.currentUser = null;
+    this.authToken = null;
     this.clearCache();
-    
+    return { success: true };
+  }
+
+  getCurrentUser() {
+    if (!this.currentUser) {
+      const user = localStorage.getItem('current_user');
+      if (user) {
+        try {
+          this.currentUser = JSON.parse(user);
+        } catch (e) {
+          return null;
+        }
+      }
+    }
+    return this.currentUser;
+  }
+
+  // Member methods
+  async getMembers() {
+    return this.request('getMembers', 'GET');
+  }
+
+  async createMember(memberData) {
+    const result = await this.request('createMember', 'POST', memberData);
+    this.clearCache();
     return result;
   }
 
-  async changePassword(currentPassword, newPassword) {
-    const result = await this.request('changePassword', 'POST', { 
-      currentPassword, 
-      newPassword 
-    });
+  async updateMember(memberId, updateData) {
+    const result = await this.request('updateMember', 'POST', { member_id: memberId, ...updateData });
+    this.clearCache();
     return result;
   }
 
-  // All other methods remain the same...
+  async deleteMember(memberId) {
+    const result = await this.request('deleteMember', 'POST', { member_id: memberId });
+    this.clearCache();
+    return result;
+  }
+
+  // Event methods
   async getEvents() {
     return this.request('getEvents', 'GET');
   }
@@ -172,20 +193,41 @@ class ChurchAPI {
     return result;
   }
 
-  async getMembers() {
-    return this.request('getMembers', 'GET');
-  }
-
+  // Visit methods
   async getVisits() {
     return this.request('getVisits', 'GET');
   }
 
+  async createVisit(visitData) {
+    const result = await this.request('createVisit', 'POST', visitData);
+    this.clearCache();
+    return result;
+  }
+
+  // Outcome methods
   async getOutcomes() {
     return this.request('getOutcomes', 'GET');
   }
 
+  async createOutcome(outcomeData) {
+    const result = await this.request('createOutcome', 'POST', outcomeData);
+    this.clearCache();
+    return result;
+  }
+
+  async deleteOutcome(outcomeId) {
+    const result = await this.request('deleteOutcome', 'POST', { outcome_id: outcomeId });
+    this.clearCache();
+    return result;
+  }
+
+  // Payment methods (New)
   async getPayments() {
     return this.request('getPayments', 'GET');
+  }
+
+  async getMemberPayments(memberId) {
+    return this.request('getMemberPayments', 'GET', { member_id: memberId });
   }
 
   async createPayment(paymentData) {
@@ -205,69 +247,11 @@ class ChurchAPI {
     this.clearCache();
     return result;
   }
-
-  async getMemberPayments(memberId) {
-    return this.request('getMemberPayments', 'GET', { member_id: memberId });
-  }
-
-  async createOutcome(outcomeData) {
-    const result = await this.request('createOutcome', 'POST', outcomeData);
-    this.clearCache();
-    return result;
-  }
-
-  async deleteOutcome(outcomeId) {
-    const result = await this.request('deleteOutcome', 'POST', { outcome_id: outcomeId });
-    this.clearCache();
-    return result;
-  }
-
-  async createMember(memberData) {
-    const result = await this.request('createMember', 'POST', memberData);
-    this.clearCache();
-    return result;
-  }
-
-  async updateMember(memberId, updateData) {
-    const result = await this.request('updateMember', 'POST', { member_id: memberId, ...updateData });
-    this.clearCache();
-    return result;
-  }
-
-  async deleteMember(memberId) {
-    const result = await this.request('deleteMember', 'POST', { member_id: memberId });
-    this.clearCache();
-    return result;
-  }
-
-  async createVisit(visitData) {
-    const result = await this.request('createVisit', 'POST', visitData);
-    this.clearCache();
-    return result;
-  }
 }
 
-// Create global api instance
+// Create global api instance (use var to avoid redeclaration)
 if (typeof api === 'undefined') {
     var api = new ChurchAPI(API_BASE_URL);
     window.api = api;
-    console.log('✅ Secure ChurchAPI initialized');
+    console.log('✅ ChurchAPI initialized, api object created');
 }
-
-// Session health check (optional)
-setInterval(async () => {
-  const sessionToken = localStorage.getItem('zcc_session_token');
-  if (sessionToken) {
-    // Simple ping to check if session is still valid
-    try {
-      const result = await api.getVisits(); // light request
-      if (!result.success && result.error?.includes('Session')) {
-        console.log('Session expired, redirecting to login');
-        localStorage.clear();
-        window.location.href = '../index.html';
-      }
-    } catch (e) {
-      console.log('Session check failed');
-    }
-  }
-}, 5 * 60 * 1000); // Check every 5 minutes

@@ -16,23 +16,22 @@
 </head>
 <body>
 <script>
-    // ========== AUTHENTICATION CHECK WITH FORCE RELOG ==========
-    
-    // Version number - increment this when you want to force all users to re-login
-    const SESSION_VERSION = 2;  // Change to 3, 4, etc. when you need to force re-login
+    const SESSION_VERSION = 2;
     
     function checkAuthAndRedirect() {
-        const isLoggedIn = localStorage.getItem('zcc_auth');
+        // Check BOTH auth systems
+        const zccAuth = localStorage.getItem('zcc_auth');
+        const apiToken = localStorage.getItem('auth_token');
         const storedVersion = localStorage.getItem('zcc_session_version');
         
-        // FORCE RE-LOGIN: Check if session version matches
+        // Version check
         if (storedVersion !== String(SESSION_VERSION)) {
-            console.log('Session version mismatch. Forcing re-login...');
             forceLogout();
             return false;
         }
         
-        if (isLoggedIn !== 'true') {
+        // Check both auth methods
+        if (zccAuth !== 'true' && !apiToken) {
             window.location.href = 'index.html';
             return false;
         }
@@ -53,18 +52,14 @@
     }
     
     function forceLogout() {
-        // Clear all session-related data
-        localStorage.removeItem('zcc_session_token');
+        // Clear both auth systems
         localStorage.removeItem('zcc_auth');
         localStorage.removeItem('zcc_user');
         localStorage.removeItem('zcc_role');
         localStorage.removeItem('zcc_login_time');
         localStorage.removeItem('zcc_session_version');
-        
-        // Optional: Clear cached data
-        localStorage.removeItem('zcc_members');
-        localStorage.removeItem('zcc_events');
-        localStorage.removeItem('zcc_payments');
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('current_user');
         
         window.location.href = 'index.html';
     }
